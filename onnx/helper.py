@@ -334,6 +334,117 @@ def float32_to_bfloat16(fval: float, truncate: bool = False) -> int:
     return (ival + rounded) >> 16
 
 
+def float32_to_floate4m3(fval: float, scale: float = 1.0) -> int:
+    """
+    Convert a float32 value to a floate4m3 (as int).
+
+    :param fval: float to convert
+    :param scale: scale, divide *fval* by *scale* before casting it
+    :return: converted float
+
+    See :ref:`onnx-detail-float8` for technical details.
+    """
+    x = fval / scale
+    b = int.from_bytes(struct.pack("<f", np.float32(x)), "little")
+    ret = (b & 0x80000000) >> 24  # sign
+    # handle specific cases
+    if (b & 0x7FC00000) == 0x7FC00000:
+        return 0xFF | ret
+    e = (b & 0x7F800000) >> 23  # exponent
+    m = b & 0x007FFFFF  # mantissa
+
+    if e != 0:
+        # exponent is not zero, when it is, closest float 8 is zero
+        if e < 117:
+            # exponent is too small
+            pass
+        elif e < 118:
+            # float 8 exponent is zero
+            ret |= 1
+            if (m >> 23) & 1:
+                # rounding
+                ret += 1
+        elif e < 121:  # 127 - 7 + 1
+            # float 8 exponent is zero except if the rounding
+            # moves the next float 8 and this one needs an exponent != 0
+            d = 120 - e
+            ret |= 1 << (2 - d)
+            ret |= m >> (21 + d)
+            if (m >> (20 + d)) & 1:
+                # rounding
+                ret += 1
+        elif e < 136:  # 127 + 8 + 1
+            # float 8 exponent is not zero
+            ex = e - 120  # 127 - 7
+            if ex == 0:
+                ret |= 0x4
+                ret |= m >> 21
+            else:
+                ret |= ex << 3
+                ret |= m >> 20
+            if m & 0x80000:
+                # rounding
+                ret += 1
+        else:
+            ret |= 126  # 01111110
+    return int(ret)
+
+
+def float32_to_floate5m2(fval: float, scale: float = 1.0) -> int:
+    """
+    Convert a float32 value to a floate5m2 (as int).
+
+    :param fval: float to convert
+    :param scale: scale, divide *fval* by *scale* before casting it
+    :return: converted float
+    """
+    x = fval / scale
+    b = int.from_bytes(struct.pack("<f", np.float32(x)), "little")
+    ret = (b & 0x80000000) >> 24  # sign
+    # handle specific cases
+    if (b & 0x7FC00000) == 0x7FC00000:
+        return 0xFF | ret
+    e = (b & 0x7F800000) >> 23  # exponent
+    m = b & 0x007FFFFF  # mantissa
+
+    if e != 0:
+        # exponent is not zero, when it is, closest float 8 is zero
+        if e < 110:
+            # exponent is too small
+            pass
+        elif e < 111:
+            # float 8 exponent is zero
+            ret |= 1
+            if (m >> 23) & 1:
+                # rounding
+                # may be unused
+                ret += 1
+        elif e < 113:  # 127 - 15 + 1
+            # float 8 exponent is zero except if the rounding
+            # moves the next float 8 and this one needs an exponent != 0
+            d = 112 - e
+            ret |= 1 << (1 - d)
+            ret |= m >> (22 + d)
+            if (m >> (21 + d)) & 1:
+                # rounding
+                ret += 1
+        elif e < 144:  # 127 + 16 + 1
+            # float 8 exponent is not zero
+            ex = e - 112  # 127 - 15
+            ret |= ex << 2
+            ret |= m >> 21
+            if m & 0x100000:
+                # rounding
+                ret += 1
+        elif e == 255 and m == 0:  # inf
+            # infinity
+            ret |= 124
+        else:
+            # highest values
+            ret |= 123
+    return int(ret)
+
+
 def make_tensor(
     name: str, data_type: int, dims: Sequence[int], vals: Any, raw: bool = False
 ) -> TensorProto:
@@ -371,6 +482,8 @@ def make_tensor(
         # which has the wrong itemsize.
         if data_type == TensorProto.BFLOAT16:
             expected_size = 2
+        elif data_type in (TensorProto.FLOATE4M3, TensorProto.FLOATE5M2):
+            expected_size = 1
         else:
             expected_size = np_dtype.itemsize
 
@@ -396,10 +509,21 @@ def make_tensor(
             vals = (
                 np.array(vals).astype(np_dtype).view(dtype=np.uint16).flatten().tolist()
             )
-        elif data_type == TensorProto.BFLOAT16:
+        elif data_type in (
+            TensorProto.BFLOAT16,
+            TensorProto.FLOATE4M3,
+            TensorProto.FLOATE5M2,
+        ):
+            fcast = {
+                TensorProto.BFLOAT16: float32_to_bfloat16,
+                TensorProto.FLOATE4M3: float32_to_floate4m3,
+                TensorProto.FLOATE5M2: float32_to_floate5m2,
+            }[
+                data_type  # type: ignore[index]
+            ]
             vals = list(
                 map(
-                    float32_to_bfloat16,
+                    fcast,
                     np.array(vals).astype(np_dtype).flatten().tolist(),
                 )
             )

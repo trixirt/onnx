@@ -37,12 +37,10 @@ from numpy.testing import assert_allclose  # type: ignore
 from onnx import OptionalProto, SequenceProto, TensorProto, load
 from onnx.backend.test import __file__ as backend_folder
 from onnx.helper import __file__ as onnx_file
-from onnx.numpy_helper import bfloat16_to_float32, to_array, to_list, to_optional
+from onnx.numpy_helper import bfloat16_to_float32, to_list, to_optional
 from onnx.reference import ReferenceEvaluator
+from onnx.reference.op_run import to_array_extended
 from onnx.reference.ops.op_cast import cast_to
-
-# Number of tests expected to pass without raising an exception.
-MIN_PASSING_TESTS = 1235
 
 # Update this list if one new operator does not have any implementation.
 SKIP_TESTS = {
@@ -71,7 +69,6 @@ if version(npver) < version("1.21.5"):
         "test_castlike_FLOAT_to_BFLOAT16",
         "test_castlike_FLOAT_to_BFLOAT16_expanded",
     }
-    MIN_PASSING_TESTS -= len(SKIP_TESTS)
 
 
 def assert_allclose_string(expected, value):
@@ -136,7 +133,7 @@ class OnnxBackendTest:
         with open(full, "rb") as f:
             serialized = f.read()
         proto_types = [
-            (TensorProto, to_array),
+            (TensorProto, to_array_extended),
             (SequenceProto, to_list),
             (OptionalProto, to_optional),
         ]
@@ -702,11 +699,12 @@ class TestOnnxBackEndWithReferenceEvaluator(unittest.TestCase):
             raise AssertionError(
                 f"Mismatch in test {te.name!r}\n{te.onnx_model}."
             ) from e
-        if 30 < success < MIN_PASSING_TESTS:
+
+        if sum(failed) > len(SKIP_TESTS):
             raise AssertionError(
-                f"The coverage ({coverage * 100:.1f}% out of {success + sum(failed)} tests) "
-                f"the runtime among has decreased. New operators were added with no "
-                f"corresponding runtime."
+                f"Unexpected failures. {sum(failed)}/{success + sum(failed)} tests have failed."
+                f"The coverage is {coverage * 100:.1f}%. "
+                f"New operators were added with no corresponding runtime."
             )
 
     @classmethod

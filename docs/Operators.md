@@ -29,13 +29,13 @@ For an operator input/output's differentiability, it can be differentiable,
 |<a href="#BitwiseNot">BitwiseNot</a>|<a href="Changelog.md#BitwiseNot-18">18</a>|
 |<a href="#BitwiseOr">BitwiseOr</a>|<a href="Changelog.md#BitwiseOr-18">18</a>|
 |<a href="#BitwiseXor">BitwiseXor</a>|<a href="Changelog.md#BitwiseXor-18">18</a>|
-|<a href="#Cast">Cast</a>|<a href="Changelog.md#Cast-13">13</a>, <a href="Changelog.md#Cast-9">9</a>, <a href="Changelog.md#Cast-6">6</a>, <a href="Changelog.md#Cast-1">1</a>|
+|<a href="#Cast">Cast</a>|<a href="Changelog.md#Cast-19">19</a>, <a href="Changelog.md#Cast-13">13</a>, <a href="Changelog.md#Cast-9">9</a>, <a href="Changelog.md#Cast-6">6</a>, <a href="Changelog.md#Cast-1">1</a>|
 |<a href="#Ceil">Ceil</a>|<a href="Changelog.md#Ceil-13">13</a>, <a href="Changelog.md#Ceil-6">6</a>, <a href="Changelog.md#Ceil-1">1</a>|
 |<a href="#Col2Im">Col2Im</a>|<a href="Changelog.md#Col2Im-18">18</a>|
 |<a href="#Compress">Compress</a>|<a href="Changelog.md#Compress-11">11</a>, <a href="Changelog.md#Compress-9">9</a>|
 |<a href="#Concat">Concat</a>|<a href="Changelog.md#Concat-13">13</a>, <a href="Changelog.md#Concat-11">11</a>, <a href="Changelog.md#Concat-4">4</a>, <a href="Changelog.md#Concat-1">1</a>|
 |<a href="#ConcatFromSequence">ConcatFromSequence</a>|<a href="Changelog.md#ConcatFromSequence-11">11</a>|
-|<a href="#Constant">Constant</a>|<a href="Changelog.md#Constant-13">13</a>, <a href="Changelog.md#Constant-12">12</a>, <a href="Changelog.md#Constant-11">11</a>, <a href="Changelog.md#Constant-9">9</a>, <a href="Changelog.md#Constant-1">1</a>|
+|<a href="#Constant">Constant</a>|<a href="Changelog.md#Constant-19">19</a>, <a href="Changelog.md#Constant-13">13</a>, <a href="Changelog.md#Constant-12">12</a>, <a href="Changelog.md#Constant-11">11</a>, <a href="Changelog.md#Constant-9">9</a>, <a href="Changelog.md#Constant-1">1</a>|
 |<a href="#ConstantOfShape">ConstantOfShape</a>|<a href="Changelog.md#ConstantOfShape-9">9</a>|
 |<a href="#Conv">Conv</a>|<a href="Changelog.md#Conv-11">11</a>, <a href="Changelog.md#Conv-1">1</a>|
 |<a href="#ConvInteger">ConvInteger</a>|<a href="Changelog.md#ConvInteger-10">10</a>|
@@ -45,7 +45,7 @@ For an operator input/output's differentiability, it can be differentiable,
 |<a href="#CumSum">CumSum</a>|<a href="Changelog.md#CumSum-14">14</a>, <a href="Changelog.md#CumSum-11">11</a>|
 |<a href="#DFT">DFT</a>|<a href="Changelog.md#DFT-17">17</a>|
 |<a href="#DepthToSpace">DepthToSpace</a>|<a href="Changelog.md#DepthToSpace-13">13</a>, <a href="Changelog.md#DepthToSpace-11">11</a>, <a href="Changelog.md#DepthToSpace-1">1</a>|
-|<a href="#DequantizeLinear">DequantizeLinear</a>|<a href="Changelog.md#DequantizeLinear-13">13</a>, <a href="Changelog.md#DequantizeLinear-10">10</a>|
+|<a href="#DequantizeLinear">DequantizeLinear</a>|<a href="Changelog.md#DequantizeLinear-19">19</a>, <a href="Changelog.md#DequantizeLinear-13">13</a>, <a href="Changelog.md#DequantizeLinear-10">10</a>|
 |<a href="#Det">Det</a>|<a href="Changelog.md#Det-11">11</a>|
 |<a href="#Div">Div</a>|<a href="Changelog.md#Div-14">14</a>, <a href="Changelog.md#Div-13">13</a>, <a href="Changelog.md#Div-7">7</a>, <a href="Changelog.md#Div-6">6</a>, <a href="Changelog.md#Div-1">1</a>|
 |<a href="#Dropout">Dropout</a>|<a href="Changelog.md#Dropout-13">13</a>, <a href="Changelog.md#Dropout-12">12</a>, <a href="Changelog.md#Dropout-10">10</a>, <a href="Changelog.md#Dropout-7">7</a>, <a href="Changelog.md#Dropout-6">6</a>, <a href="Changelog.md#Dropout-1">1</a>|
@@ -105,7 +105,7 @@ For an operator input/output's differentiability, it can be differentiable,
 |<a href="#Pow">Pow</a>|<a href="Changelog.md#Pow-15">15</a>, <a href="Changelog.md#Pow-13">13</a>, <a href="Changelog.md#Pow-12">12</a>, <a href="Changelog.md#Pow-7">7</a>, <a href="Changelog.md#Pow-1">1</a>|
 |<a href="#QLinearConv">QLinearConv</a>|<a href="Changelog.md#QLinearConv-10">10</a>|
 |<a href="#QLinearMatMul">QLinearMatMul</a>|<a href="Changelog.md#QLinearMatMul-10">10</a>|
-|<a href="#QuantizeLinear">QuantizeLinear</a>|<a href="Changelog.md#QuantizeLinear-13">13</a>, <a href="Changelog.md#QuantizeLinear-10">10</a>|
+|<a href="#QuantizeLinear">QuantizeLinear</a>|<a href="Changelog.md#QuantizeLinear-19">19</a>, <a href="Changelog.md#QuantizeLinear-13">13</a>, <a href="Changelog.md#QuantizeLinear-10">10</a>|
 |<a href="#RNN">RNN</a>|<a href="Changelog.md#RNN-14">14</a>, <a href="Changelog.md#RNN-7">7</a>, <a href="Changelog.md#RNN-1">1</a>|
 |<a href="#RandomNormal">RandomNormal</a>|<a href="Changelog.md#RandomNormal-1">1</a>|
 |<a href="#RandomNormalLike">RandomNormalLike</a>|<a href="Changelog.md#RandomNormalLike-1">1</a>|
@@ -163,7 +163,7 @@ For an operator input/output's differentiability, it can be differentiable,
 |**Function**|**Since version**|**Function version**|
 |<a href="#Bernoulli">Bernoulli</a>|<a href="Changelog.md#Bernoulli-15">15</a>|15|
 |<a href="#BlackmanWindow">BlackmanWindow</a>|<a href="Changelog.md#BlackmanWindow-17">17</a>|17|
-|<a href="#CastLike">CastLike</a>|<a href="Changelog.md#CastLike-15">15</a>|15|
+|<a href="#CastLike">CastLike</a>|<a href="Changelog.md#CastLike-19">19</a>, <a href="Changelog.md#CastLike-15">15</a>|19|
 |<a href="#Celu">Celu</a>|<a href="Changelog.md#Celu-12">12</a>|12|
 |<a href="#CenterCropPad">CenterCropPad</a>|<a href="Changelog.md#CenterCropPad-18">18</a>|18|
 |<a href="#Clip">Clip</a>|<a href="Changelog.md#Clip-13">13</a>, <a href="Changelog.md#Clip-12">12</a>, <a href="Changelog.md#Clip-11">11</a>, <a href="Changelog.md#Clip-6">6</a>, <a href="Changelog.md#Clip-1">1</a>|13|
@@ -3057,9 +3057,9 @@ expect(node, inputs=[size], outputs=[y], name="test_blackmanwindow_symmetric")
 
 #### Version
 
-This version of the operator has been available since version 13 of the default ONNX operator set.
+This version of the operator has been available since version 19 of the default ONNX operator set.
 
-Other versions of this operator: <a href="Changelog.md#Cast-1">1</a>, <a href="Changelog.md#Cast-6">6</a>, <a href="Changelog.md#Cast-9">9</a>
+Other versions of this operator: <a href="Changelog.md#Cast-1">1</a>, <a href="Changelog.md#Cast-6">6</a>, <a href="Changelog.md#Cast-9">9</a>, <a href="Changelog.md#Cast-13">13</a>
 
 #### Attributes
 
@@ -3085,9 +3085,9 @@ Other versions of this operator: <a href="Changelog.md#Cast-1">1</a>, <a href="C
 #### Type Constraints
 
 <dl>
-<dt><tt>T1</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16)</dt>
+<dt><tt>T1</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain input types. Casting from complex is not supported.</dd>
-<dt><tt>T2</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16)</dt>
+<dt><tt>T2</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain output types. Casting to complex is not supported.</dd>
 </dl>
 
@@ -3110,7 +3110,19 @@ test_cases = [
     ("STRING", "FLOAT"),
     ("FLOAT", "BFLOAT16"),
     ("BFLOAT16", "FLOAT"),
+    ("FLOAT", "FLOATE4M3"),
+    ("FLOAT16", "FLOATE4M3"),
+    ("FLOATE4M3", "FLOAT"),
+    ("FLOATE4M3", "FLOAT16"),
+    ("FLOAT", "FLOATE5M2"),
+    ("FLOAT16", "FLOATE5M2"),
+    ("FLOATE5M2", "FLOAT"),
+    ("FLOATE5M2", "FLOAT16"),
 ]
+
+vect_float32_to_floate4m3 = np.vectorize(float32_to_floate4m3)
+vect_float32_to_floate5m2 = np.vectorize(float32_to_floate5m2)
+f8_types = ("FLOATE4M3", "FLOATE5M2")
 
 for from_type, to_type in test_cases:
     input_type_proto = None
@@ -3164,6 +3176,52 @@ for from_type, to_type in test_cases:
             )
             output_type_proto = onnx.helper.make_tensor_type_proto(
                 int(TensorProto.FLOAT), output.shape
+            )
+    elif from_type in f8_types or to_type in f8_types:
+        np_fp32 = np.array(
+            [
+                "0.47892547",
+                "0.48033667",
+                "0.49968487",
+                "0.81910545",
+                "0.47031248",
+                "0.816468",
+                "0.21087195",
+                "0.7229038",
+                "NaN",
+                "INF",
+                "+INF",
+                "-INF",
+            ],
+            dtype=np.float32,
+        )
+        if "FLOAT16" in (from_type, to_type):
+            np_fp32 = np_fp32.astype(np.float16).astype(np.float32)
+        if to_type == "FLOATE4M3":
+            expected = floate4m3_to_float32(vect_float32_to_floate4m3(np_fp32))
+            expected_tensor = make_tensor(
+                "x", TensorProto.FLOATE4M3, [3, 4], expected.tolist()
+            )
+        else:
+            expected = floate5m2_to_float32(vect_float32_to_floate5m2(np_fp32))
+            expected_tensor = make_tensor(
+                "x", TensorProto.FLOATE5M2, [3, 4], expected.tolist()
+            )
+        if from_type == "FLOAT":
+            input = np_fp32.reshape((3, 4))
+            output = expected_tensor
+        elif from_type == "FLOAT16":
+            input = np_fp32.astype(np.float16).reshape((3, 4))
+            output = expected_tensor
+        elif to_type == "FLOAT16":
+            input = expected_tensor
+            output = expected.astype(np.float16).reshape((3, 4))
+        elif to_type == "FLOAT":
+            input = expected_tensor
+            output = expected.reshape((3, 4))
+        else:
+            raise ValueError(
+                f"Either from_type={from_type!r} or to_type={to_type!r} is misspelled."
             )
     elif "STRING" != from_type:
         input = np.random.random_sample(shape).astype(
@@ -3238,7 +3296,9 @@ for from_type, to_type in test_cases:
 
 #### Version
 
-This version of the operator has been available since version 15 of the default ONNX operator set.
+This version of the operator has been available since version 19 of the default ONNX operator set.
+
+Other versions of this operator: <a href="Changelog.md#CastLike-15">15</a>
 
 #### Inputs
 
@@ -3259,9 +3319,9 @@ This version of the operator has been available since version 15 of the default 
 #### Type Constraints
 
 <dl>
-<dt><tt>T1</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16)</dt>
+<dt><tt>T1</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain input types. Casting from complex is not supported.</dd>
-<dt><tt>T2</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16)</dt>
+<dt><tt>T2</tt> : tensor(float16), tensor(float), tensor(double), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(bool), tensor(string), tensor(bfloat16), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain output types. Casting to complex is not supported.</dd>
 </dl>
 
@@ -3284,7 +3344,14 @@ test_cases = [
     ("STRING", "FLOAT"),
     ("FLOAT", "BFLOAT16"),
     ("BFLOAT16", "FLOAT"),
+    ("FLOAT", "FLOATE4M3"),
+    ("FLOATE4M3", "FLOAT"),
+    ("FLOAT", "FLOATE5M2"),
+    ("FLOATE5M2", "FLOAT"),
 ]
+
+vect_float32_to_floate4m3 = np.vectorize(float32_to_floate4m3)
+vect_float32_to_floate5m2 = np.vectorize(float32_to_floate5m2)
 
 for from_type, to_type in test_cases:
     input_type_proto = None
@@ -3339,6 +3406,53 @@ for from_type, to_type in test_cases:
             output_type_proto = onnx.helper.make_tensor_type_proto(
                 int(TensorProto.FLOAT), output.shape
             )
+        like = output.flatten()[0:1]
+    elif from_type in ("FLOATE4M3", "FLOATE5M2") or to_type in (
+        "FLOATE4M3",
+        "FLOATE5M2",
+    ):
+        np_fp32 = np.array(
+            [
+                "0.47892547",
+                "0.48033667",
+                "0.49968487",
+                "0.81910545",
+                "0.47031248",
+                "0.816468",
+                "0.21087195",
+                "0.7229038",
+                "NaN",
+                "INF",
+                "+INF",
+                "-INF",
+            ],
+            dtype=np.float32,
+        )
+        if to_type == "FLOATE4M3":
+            expected = floate4m3_to_float32(vect_float32_to_floate4m3(np_fp32))
+            expected_tensor = make_tensor(
+                "x", TensorProto.FLOATE4M3, [3, 4], expected.tolist()
+            )
+            like_tensor = make_tensor(
+                "x", TensorProto.FLOATE4M3, [1], expected[:1]
+            )
+        else:
+            expected = floate5m2_to_float32(vect_float32_to_floate5m2(np_fp32))
+            expected_tensor = make_tensor(
+                "x", TensorProto.FLOATE5M2, [3, 4], expected.tolist()
+            )
+            like_tensor = make_tensor(
+                "x", TensorProto.FLOATE5M2, [1], expected[:1]
+            )
+        if from_type == "FLOAT":
+            input = np_fp32.reshape((3, 4))
+            output = expected_tensor
+            like = like_tensor
+        else:
+            assert to_type == "FLOAT"
+            input = expected_tensor
+            output = expected.reshape((3, 4))
+            like = output.flatten()[:1]
     elif "STRING" != from_type:
         input = np.random.random_sample(shape).astype(
             helper.tensor_dtype_to_np_dtype(getattr(TensorProto, from_type))
@@ -3356,6 +3470,7 @@ for from_type, to_type in test_cases:
             output = input.astype(
                 helper.tensor_dtype_to_np_dtype(getattr(TensorProto, to_type))
             )
+        like = output.flatten()[0:1]
     else:
         input = np.array(
             [
@@ -3377,7 +3492,7 @@ for from_type, to_type in test_cases:
         output = input.astype(
             helper.tensor_dtype_to_np_dtype(getattr(TensorProto, to_type))
         )
-    like = output.flatten()[0:1]
+        like = output.flatten()[0:1]
     node = onnx.helper.make_node(
         "CastLike",
         inputs=["input", "like"],
@@ -4620,9 +4735,9 @@ This version of the operator has been available since version 11 of the default 
 
 #### Version
 
-This version of the operator has been available since version 13 of the default ONNX operator set.
+This version of the operator has been available since version 19 of the default ONNX operator set.
 
-Other versions of this operator: <a href="Changelog.md#Constant-1">1</a>, <a href="Changelog.md#Constant-9">9</a>, <a href="Changelog.md#Constant-11">11</a>, <a href="Changelog.md#Constant-12">12</a>
+Other versions of this operator: <a href="Changelog.md#Constant-1">1</a>, <a href="Changelog.md#Constant-9">9</a>, <a href="Changelog.md#Constant-11">11</a>, <a href="Changelog.md#Constant-12">12</a>, <a href="Changelog.md#Constant-13">13</a>
 
 #### Attributes
 
@@ -4658,7 +4773,7 @@ Other versions of this operator: <a href="Changelog.md#Constant-1">1</a>, <a hre
 #### Type Constraints
 
 <dl>
-<dt><tt>T</tt> : tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(bfloat16), tensor(float16), tensor(float), tensor(double), tensor(string), tensor(bool), tensor(complex64), tensor(complex128)</dt>
+<dt><tt>T</tt> : tensor(uint8), tensor(uint16), tensor(uint32), tensor(uint64), tensor(int8), tensor(int16), tensor(int32), tensor(int64), tensor(bfloat16), tensor(float16), tensor(float), tensor(double), tensor(string), tensor(bool), tensor(complex64), tensor(complex128), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain input and output types to all tensor types.</dd>
 </dl>
 
@@ -6296,12 +6411,14 @@ expect(node, inputs=[x], outputs=[y], name="test_depthtospace_example")
   for per-tensor / per layer quantization, or a 1-D tensor for per-axis quantization.
   `x_zero_point` and `x` must have same type. `x` and `y` must have same shape. In the case of dequantizing int32,
   there's no zero point (zero point is supposed to be 0).
+  `y_zero_point` is not used for quantization to floate4m3 or floate5m2,
+  the dequantization formula is then `y = x * x_scale` and 'x_scale' determines the output type.
 
 #### Version
 
-This version of the operator has been available since version 13 of the default ONNX operator set.
+This version of the operator has been available since version 19 of the default ONNX operator set.
 
-Other versions of this operator: <a href="Changelog.md#DequantizeLinear-10">10</a>
+Other versions of this operator: <a href="Changelog.md#DequantizeLinear-10">10</a>, <a href="Changelog.md#DequantizeLinear-13">13</a>
 
 #### Attributes
 
@@ -6313,26 +6430,28 @@ Other versions of this operator: <a href="Changelog.md#DequantizeLinear-10">10</
 #### Inputs (2 - 3)
 
 <dl>
-<dt><tt>x</tt> : T</dt>
+<dt><tt>x</tt> : T1</dt>
 <dd>N-D quantized input tensor to be de-quantized.</dd>
-<dt><tt>x_scale</tt> : tensor(float)</dt>
+<dt><tt>x_scale</tt> : T2</dt>
 <dd>Scale for input 'x'. It can be a scalar, which means a per-tensor/layer dequantization, or a 1-D tensor for per-axis dequantization.</dd>
-<dt><tt>x_zero_point</tt> (optional) : T</dt>
+<dt><tt>x_zero_point</tt> (optional) : T1</dt>
 <dd>Zero point for input 'x'. Shape must match x_scale. It's optional. Zero point is 0 when it's not specified.</dd>
 </dl>
 
 #### Outputs
 
 <dl>
-<dt><tt>y</tt> : tensor(float)</dt>
+<dt><tt>y</tt> : T2</dt>
 <dd>N-D full precision output tensor. It has same shape as input 'x'.</dd>
 </dl>
 
 #### Type Constraints
 
 <dl>
-<dt><tt>T</tt> : tensor(int8), tensor(uint8), tensor(int32)</dt>
+<dt><tt>T1</tt> : tensor(int8), tensor(uint8), tensor(int32), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain 'x_zero_point' and 'x' to 8-bit/32-bit integer tensor.</dd>
+<dt><tt>T2</tt> : tensor(float), tensor(float16), tensor(bfloat16)</dt>
+<dd>'y_scale' determines the output type.</dd>
 </dl>
 
 
@@ -6397,6 +6516,58 @@ expect(
     inputs=[x, x_scale, x_zero_point],
     outputs=[y],
     name="test_dequantizelinear",
+)
+```
+
+</details>
+
+
+<details>
+<summary>e4m3</summary>
+
+```python
+node = onnx.helper.make_node(
+    "DequantizeLinear",
+    inputs=["x", "x_scale"],
+    outputs=["y"],
+)
+
+# scalar zero point and scale
+x = make_tensor("x", TensorProto.FLOATE4M3, [5], [0, 0.5, 1, 448, 104])
+x_scale = np.float32(2)
+y = np.array([0.0, 1.0, 2.0, 896.0, 208.0], dtype=np.float32)
+
+expect(
+    node,
+    inputs=[x, x_scale],
+    outputs=[y],
+    name="test_dequantizelinear_e4m3",
+)
+```
+
+</details>
+
+
+<details>
+<summary>e5m2</summary>
+
+```python
+node = onnx.helper.make_node(
+    "DequantizeLinear",
+    inputs=["x", "x_scale"],
+    outputs=["y"],
+)
+
+# scalar zero point and scale
+x = make_tensor("x", TensorProto.FLOATE5M2, [5], [0, 0.5, 1, 49152, 96])
+x_scale = np.float32(2)
+y = np.array([0.0, 1.0, 2.0, 98304.0, 192.0], dtype=np.float32)
+
+expect(
+    node,
+    inputs=[x, x_scale],
+    outputs=[y],
+    name="test_dequantizelinear_e5m2",
 )
 ```
 
@@ -17801,15 +17972,19 @@ expect(
 
   The linear quantization operator. It consumes a high precision tensor, a scale, and a zero point to compute the low precision / quantized tensor.
   The scale factor and zero point must have same shape, and can be either a scalar for per-tensor / per layer quantization, or a 1-D tensor for per-axis quantization.
-  The quantization formula is y = saturate ((x / y_scale) + y_zero_point).
+  The quantization formula is `y = saturate ((x / y_scale) + y_zero_point)`.
   For saturation, it saturates to [0, 255] if it's uint8, or [-128, 127] if it's int8.
-  For (x / y_scale), it's rounding to nearest ties to even. Refer to https://en.wikipedia.org/wiki/Rounding for details. 'y_zero_point' and 'y' must have same type.
+  For (x / y_scale), it's rounding to nearest ties to even. Refer to https://en.wikipedia.org/wiki/Rounding for details.
+  'y_zero_point' and 'y' must have same type.
+  'y_zero_point' is not used for quantization to floate4m3 or floate5m2,
+  the quantization formula is then `y = saturate (x / y_scale)`.
+  However, the type of the attribute 'y_zero_point' still determines the quantization type.
 
 #### Version
 
-This version of the operator has been available since version 13 of the default ONNX operator set.
+This version of the operator has been available since version 19 of the default ONNX operator set.
 
-Other versions of this operator: <a href="Changelog.md#QuantizeLinear-10">10</a>
+Other versions of this operator: <a href="Changelog.md#QuantizeLinear-10">10</a>, <a href="Changelog.md#QuantizeLinear-13">13</a>
 
 #### Attributes
 
@@ -17823,7 +17998,7 @@ Other versions of this operator: <a href="Changelog.md#QuantizeLinear-10">10</a>
 <dl>
 <dt><tt>x</tt> : T1</dt>
 <dd>N-D full precision Input tensor to be quantized.</dd>
-<dt><tt>y_scale</tt> : tensor(float)</dt>
+<dt><tt>y_scale</tt> : T1</dt>
 <dd>Scale for doing quantization to get 'y'. It can be a scalar, which means per-tensor/layer quantization, or a 1-D Tensor for per-axis quantization.</dd>
 <dt><tt>y_zero_point</tt> (optional) : T2</dt>
 <dd>Zero point for doing quantization to get 'y'. Shape must match y_scale. Default is uint8 with zero point of 0 if it's not specified.</dd>
@@ -17839,9 +18014,9 @@ Other versions of this operator: <a href="Changelog.md#QuantizeLinear-10">10</a>
 #### Type Constraints
 
 <dl>
-<dt><tt>T1</tt> : tensor(float), tensor(int32)</dt>
-<dd>Constrain 'x' to float or int32 tensor.</dd>
-<dt><tt>T2</tt> : tensor(int8), tensor(uint8)</dt>
+<dt><tt>T1</tt> : tensor(float), tensor(float16), tensor(bfloat16), tensor(int32)</dt>
+<dd>Constrain 'x' to float, float16, bfloat16 or int32 tensor.</dd>
+<dt><tt>T2</tt> : tensor(int8), tensor(uint8), tensor(floate4m3), tensor(floate5m2)</dt>
 <dd>Constrain 'y_zero_point' and 'y' to 8-bit integer tensor.</dd>
 </dl>
 
@@ -17879,6 +18054,60 @@ expect(
     inputs=[x, y_scale, y_zero_point],
     outputs=[y],
     name="test_quantizelinear_axis",
+)
+```
+
+</details>
+
+
+<details>
+<summary>e4m3</summary>
+
+```python
+node = onnx.helper.make_node(
+    "QuantizeLinear",
+    inputs=["x", "y_scale", "y_zero_point"],
+    outputs=["y"],
+)
+
+x = np.array([0.0, 1.0, 2.0, 100000.0, 200.0]).astype(np.float32)
+y_scale = np.float32(2)
+y_zero_point = make_tensor("zero_point", TensorProto.FLOATE4M3, [1], [0])
+y = make_tensor("zero_point", TensorProto.FLOATE4M3, [5], [0, 0.5, 1, 448, 104])
+
+expect(
+    node,
+    inputs=[x, y_scale, y_zero_point],
+    outputs=[y],
+    name="test_quantizelinear_e4m3",
+)
+```
+
+</details>
+
+
+<details>
+<summary>e5m2</summary>
+
+```python
+node = onnx.helper.make_node(
+    "QuantizeLinear",
+    inputs=["x", "y_scale", "y_zero_point"],
+    outputs=["y"],
+)
+
+x = np.array([0.0, 1.0, 2.0, 100000.0, 200.0]).astype(np.float32)
+y_scale = np.float32(2)
+y_zero_point = make_tensor("zero_point", TensorProto.FLOATE5M2, [1], [0.0])
+y = make_tensor(
+    "zero_point", TensorProto.FLOATE5M2, [5], [0, 0.5, 1, 49152, 96]
+)
+
+expect(
+    node,
+    inputs=[x, y_scale, y_zero_point],
+    outputs=[y],
+    name="test_quantizelinear_e5m2",
 )
 ```
 

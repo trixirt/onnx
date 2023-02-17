@@ -1,0 +1,99 @@
+
+.. _onnx-detail-float8:
+
+======================
+Float stored on 8 bits
+======================
+
+.. contents::
+    :local:
+
+Papers
+======
+
+Two papers have been published in 2022 to introduce floats
+stored on a byte as opposed to float 32 stored on 4 bytes.
+The float precision is much lower but the training precision
+does not suffer too much.
+
+`FP8 Formats for Deep Learning <https://arxiv.org/abs/2209.05433>`_
+from NVIDIA introduces two types following
+`IEEE specifciations <https://en.wikipedia.org/wiki/IEEE_754>`_.
+First one is E4M3, 1 bit for the sign, 4 bits for the exponents and 3
+bits for the mantissa. Second one is E5M2, 1 bit for the sign,
+3 bits for the exponents and 2 for the mantissa. The first types
+is mostly used for the coefficients, the second one for the gradient.
+
+Second paper `8-bit Numerical Formats For Deep Neural Networks
+<https://arxiv.org/pdf/2206.02915.pdf>`_ introduces
+similar types. IEEE standard gives the same value
+to `+0` (or integer 0) and `-0` (or integer 128).
+They chose to give distinct float values to these two
+numbers. The paper experiments different split between
+exponent and mantissa and shows and E4M3 and E5M2 are
+the best ones.
+
+FP8 from IEEE
+=============
+
+Definition
+++++++++++
+
+:math:`S` stands for the sign. :math:`10_2` describe a number base 2.
+
+.. list-table:: Float8 types
+   :widths: 10 10 10
+   :header-rows: 1
+
+   * - 
+     - E4M3
+     - E5M2
+   * - Exponent bias
+     - 7
+     - 15
+   * - Infinities
+     -
+     - :math:`S.11111.00_2`
+   * - NaN
+     - :math:`S.1111.111_2`
+     - :math:`S.11111.\{01, 10, 11\}_2`
+   * - Zeros
+     - :math:`S.0000.000_2`
+     - :math:`S.00000.00_2`
+   * - Max
+     - :math:`S.1111.110_2`
+     - :math:`1.75 \times 2^{15}= 57344`
+   * - Min
+     - :math:`S.0000.001_2 = 2^{-9}`
+     - :math:`S.00000.01_2 = 2^{-16}`
+
+
+Let's denote the bit representation as :math:`S.b_6 b_5 b_4 b_3 b_2 b_1 b_0`.
+The float value is defined by the following expressions:
+
+.. list-table:: Float8 types values
+   :widths: 10 10 10
+   :header-rows: 1
+
+   * - 
+     - E4M3
+     - E5M2
+   * - exponent :math:`\neq` 0
+     - :math:`(-1)^S 2^{\sum_{i=3}^6 b_i 2^{i-3} - 7} \left( 1 + \sum_{i=0}^2 b_i 2^{i-3} \right)`
+     - :math:`(-1)^S 2^{\sum_{i=2}^6 b_i 2^{i-2} - 15} \left( 1 + \sum_{i=0}^1 b_i 2^{i-2} \right)`
+   * - exponent :math:`=` 0
+     - :math:`(-1)^S 2^{-6} \sum_{i=0}^2 b_i 2^{i-3}`
+     - :math:`(-1)^S 2^{-14} \sum_{i=0}^1 b_i 2^{i-2}`
+
+Cast
+++++
+
+Cast from float 8 to
+`float 16 <https://en.wikipedia.org/wiki/Half-precision_floating-point_format>`_ (or E5M10),
+`bfloat16 <https://en.wikipedia.org/wiki/Bfloat16_floating-point_format>`_ (or E8M7),
+`float32 <https://en.wikipedia.org/wiki/Single-precision_floating-point_format>`_ (or E8M23) is easier.
+The cast is exact. The tricky part is to distinguish between exponent = 0 and :math:`neq 0`.
+
+Cast to float 8 consists in finding the closest float 8
+to the original float 32 value. It is usually done by shifting
+and truncating. The tricky part is to handle rounding.

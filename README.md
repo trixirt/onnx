@@ -141,7 +141,7 @@ msbuild protobuf.sln /m /p:Configuration=Release
 msbuild INSTALL.vcxproj /p:Configuration=Release
 ```
 
-Then it will be built as a static library and installed to <protobuf_install_dir>. Please add the bin directory(which contains protoc.exe) to your PATH.
+Then it will be built as a static library and installed to <protobuf_install_dir>. Please add the bin directory (which contains protoc.exe) to your PATH.
 
 ```bat
 set PATH=<protobuf_install_dir>/bin;%PATH%
@@ -209,7 +209,7 @@ A more general way is to build and install it from source. See the instructions 
     make install
   ```
 
-  Here "-DCMAKE_POSITION_INDEPENDENT_CODE=ON" is crucial. By default static libraries are built without "-fPIC" flag, they are not position independent code. But shared libraries must be position independent code. Python C/C++ extensions(like ONNX) are shared libraries. So if a static library was not built with "-fPIC", it can't be linked to such a shared library.
+  Here "-DCMAKE_POSITION_INDEPENDENT_CODE=ON" is crucial. By default static libraries are built without "-fPIC" flag, they are not position independent code. But shared libraries must be position independent code. Python C/C++ extensions (like ONNX) are shared libraries. So if a static library was not built with "-fPIC", it can't be linked to such a shared library.
 
   Once build is successful, update PATH to include protobuf paths.
 

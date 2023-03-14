@@ -7,11 +7,10 @@ import numpy as np
 
 import onnx
 from onnx import TensorProto, helper
-from onnx.helper import float32_to_floate4m3, float32_to_floate5m2, make_tensor
-from onnx.numpy_helper import floate4m3_to_float32, floate5m2_to_float32
-
-from ..base import Base
-from . import expect
+from onnx.backend.test.case.base import Base
+from onnx.backend.test.case.node import expect
+from onnx.helper import float32_to_float8e4m3, float32_to_float8e5m2, make_tensor
+from onnx.numpy_helper import float8e4m3_to_float32, float8e5m2_to_float32
 
 
 class CastLike(Base):
@@ -29,19 +28,23 @@ class CastLike(Base):
             ("STRING", "FLOAT"),
             ("FLOAT", "BFLOAT16"),
             ("BFLOAT16", "FLOAT"),
-            ("FLOAT", "FLOATE4M3"),
-            ("FLOATE4M3", "FLOAT"),
-            ("FLOAT", "FLOATE5M2"),
-            ("FLOATE5M2", "FLOAT"),
+            ("FLOAT", "FLOAT8E4M3FN"),
+            ("FLOAT", "FLOAT8E4M3FNUZ"),
+            ("FLOAT8E4M3FN", "FLOAT"),
+            ("FLOAT8E4M3FNUZ", "FLOAT"),
+            ("FLOAT", "FLOAT8E5M2"),
+            ("FLOAT", "FLOAT8E5M2FNUZ"),
+            ("FLOAT8E5M2", "FLOAT"),
+            ("FLOAT8E5M2FNUZ", "FLOAT"),
         ]
 
-        vect_float32_to_floate4m3 = np.vectorize(float32_to_floate4m3)
-        vect_float32_to_floate5m2 = np.vectorize(float32_to_floate5m2)
+        vect_float32_to_float8e4m3 = np.vectorize(float32_to_float8e4m3)
+        vect_float32_to_float8e5m2 = np.vectorize(float32_to_float8e5m2)
 
         for from_type, to_type in test_cases:
             input_type_proto = None
             output_type_proto = None
-            if "BFLOAT16" == from_type or "BFLOAT16" == to_type:
+            if from_type == "BFLOAT16" or to_type == "BFLOAT16":
                 np_fp32 = np.array(
                     [
                         "0.47892547",
@@ -64,7 +67,7 @@ class CastLike(Base):
                 np_bfp16 = (
                     np_uint16_view[1::2] if little_endisan else np_uint16_view[0::2]
                 )
-                if "BFLOAT16" == to_type:
+                if to_type == "BFLOAT16":
                     assert from_type == "FLOAT"
                     input = np_fp32.reshape([3, 4])
                     output = np_bfp16.reshape([3, 4])
@@ -92,9 +95,16 @@ class CastLike(Base):
                         int(TensorProto.FLOAT), output.shape
                     )
                 like = output.flatten()[0:1]
-            elif from_type in ("FLOATE4M3", "FLOATE5M2") or to_type in (
-                "FLOATE4M3",
-                "FLOATE5M2",
+            elif from_type in (
+                "FLOAT8E4M3FN",
+                "FLOAT8E4M3FNUZ",
+                "FLOAT8E5M2",
+                "FLOAT8E5M2FNUZ",
+            ) or to_type in (
+                "FLOAT8E4M3FN",
+                "FLOAT8E4M3FNUZ",
+                "FLOAT8E5M2",
+                "FLOAT8E5M2FNUZ",
             ):
                 np_fp32 = np.array(
                     [
@@ -113,21 +123,47 @@ class CastLike(Base):
                     ],
                     dtype=np.float32,
                 )
-                if to_type == "FLOATE4M3":
-                    expected = floate4m3_to_float32(vect_float32_to_floate4m3(np_fp32))
+                if to_type == "FLOAT8E4M3FN":
+                    expected = float8e4m3_to_float32(
+                        vect_float32_to_float8e4m3(np_fp32)
+                    )
                     expected_tensor = make_tensor(
-                        "x", TensorProto.FLOATE4M3, [3, 4], expected.tolist()
+                        "x", TensorProto.FLOAT8E4M3FN, [3, 4], expected.tolist()
                     )
                     like_tensor = make_tensor(
-                        "x", TensorProto.FLOATE4M3, [1], expected[:1]
+                        "x", TensorProto.FLOAT8E4M3FN, [1], expected[:1]
                     )
-                else:
-                    expected = floate5m2_to_float32(vect_float32_to_floate5m2(np_fp32))
+                elif to_type == "FLOAT8E4M3FNUZ":
+                    expected = float8e4m3_to_float32(
+                        vect_float32_to_float8e4m3(np_fp32, uz=True), uz=True
+                    )
                     expected_tensor = make_tensor(
-                        "x", TensorProto.FLOATE5M2, [3, 4], expected.tolist()
+                        "x", TensorProto.FLOAT8E4M3FNUZ, [3, 4], expected.tolist()
                     )
                     like_tensor = make_tensor(
-                        "x", TensorProto.FLOATE5M2, [1], expected[:1]
+                        "x", TensorProto.FLOAT8E4M3FNUZ, [1], expected[:1]
+                    )
+                elif to_type == "FLOAT8E5M2":
+                    expected = float8e5m2_to_float32(
+                        vect_float32_to_float8e5m2(np_fp32)
+                    )
+                    expected_tensor = make_tensor(
+                        "x", TensorProto.FLOAT8E5M2, [3, 4], expected.tolist()
+                    )
+                    like_tensor = make_tensor(
+                        "x", TensorProto.FLOAT8E5M2, [1], expected[:1]
+                    )
+                elif to_type == "FLOAT8E5M2FNUZ":
+                    expected = float8e5m2_to_float32(
+                        vect_float32_to_float8e5m2(np_fp32, fn=True, uz=True),
+                        fn=True,
+                        uz=True,
+                    )
+                    expected_tensor = make_tensor(
+                        "x", TensorProto.FLOAT8E5M2FNUZ, [3, 4], expected.tolist()
+                    )
+                    like_tensor = make_tensor(
+                        "x", TensorProto.FLOAT8E5M2FNUZ, [1], expected[:1]
                     )
                 if from_type == "FLOAT":
                     input = np_fp32.reshape((3, 4))
@@ -138,11 +174,11 @@ class CastLike(Base):
                     input = expected_tensor
                     output = expected.reshape((3, 4))
                     like = output.flatten()[:1]
-            elif "STRING" != from_type:
+            elif from_type != "STRING":
                 input = np.random.random_sample(shape).astype(
                     helper.tensor_dtype_to_np_dtype(getattr(TensorProto, from_type))
                 )
-                if "STRING" == to_type:
+                if to_type == "STRING":
                     # Converting input to str, then give it object dtype for generating script
                     ss = []
                     for i in input.flatten():

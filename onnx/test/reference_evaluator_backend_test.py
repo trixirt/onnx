@@ -258,18 +258,39 @@ class OnnxBackendTest:
                             f"Output {i_output} of test {index} in folder {self.folder!r} failed, comment={comment}."
                         ) from ex
                 else:
-                    try:
-                        assert_allclose(desired, output, atol=atol, rtol=rtl)
-                    except AssertionError as ex:
+                    equal_nan = desired.dtype in (np.float16, np.float32, np.float64)
+                    if equal_nan:
                         try:
-                            diff = output - desired
-                        except ValueError:
-                            diff = None
-                        raise AssertionError(
-                            f"Output {i_output} of test {index} in folder {self.folder!r} failed "
-                            f"(rtol={rtl}, atol={atol}), comment={comment}\n---\n{desired}\n----"
-                            f"\n{output}\n-----\n{diff}\n------INPUTS----\n{pprint.pformat(inputs)}."
-                        ) from ex
+                            assert_allclose(
+                                desired,
+                                output,
+                                atol=atol,
+                                rtol=rtl,
+                                equal_nan=equal_nan,
+                            )
+                        except AssertionError as ex:
+                            try:
+                                diff = output - desired
+                            except ValueError:
+                                diff = None
+                            raise AssertionError(
+                                f"Output {i_output} of test {index} in folder {self.folder!r} failed "
+                                f"(rtol={rtl}, atol={atol}), comment={comment}\n---\n{desired}\n----"
+                                f"\n{output}\n-----\n{diff}\n------INPUTS----\n{pprint.pformat(inputs)}."
+                            ) from ex
+                    else:
+                        # float 8 types
+                        if desired.dtype != output.dtype:
+                            raise AssertionError(
+                                f"Output {i_output} of test {index} in folder {self.folder!r} "
+                                f"has unexpected type {output.dtype} (expecting {desired.dtype}.)"
+                            )
+                        if desired.tolist() != output.tolist():
+                            raise AssertionError(
+                                f"Output {i_output} of test {index} in folder {self.folder!r} "
+                                f"has unexpected values {output} (expecting {desired}.)"
+                            )
+
                 if desired.shape != output.shape:
                     raise AssertionError(
                         f"Output {i_output} of test {index} in folder {self.folder!r} failed "
@@ -434,7 +455,6 @@ def enumerate_onnx_tests(series, fct_filter=None):
 
 
 class TestOnnxBackEndWithReferenceEvaluator(unittest.TestCase):
-
     folder = os.path.join(
         os.path.abspath(os.path.dirname(__file__)), "onnx_backend_test_code"
     )

@@ -2112,24 +2112,32 @@ test_cases = [
     ("STRING", "FLOAT"),
     ("FLOAT", "BFLOAT16"),
     ("BFLOAT16", "FLOAT"),
-    ("FLOAT", "FLOATE4M3"),
-    ("FLOAT16", "FLOATE4M3"),
-    ("FLOATE4M3", "FLOAT"),
-    ("FLOATE4M3", "FLOAT16"),
-    ("FLOAT", "FLOATE5M2"),
-    ("FLOAT16", "FLOATE5M2"),
-    ("FLOATE5M2", "FLOAT"),
-    ("FLOATE5M2", "FLOAT16"),
+    ("FLOAT", "FLOAT8E4M3FN"),
+    ("FLOAT16", "FLOAT8E4M3FN"),
+    ("FLOAT", "FLOAT8E4M3FNUZ"),
+    ("FLOAT16", "FLOAT8E4M3FNUZ"),
+    ("FLOAT8E4M3FN", "FLOAT"),
+    ("FLOAT8E4M3FN", "FLOAT16"),
+    ("FLOAT8E4M3FNUZ", "FLOAT"),
+    ("FLOAT8E4M3FNUZ", "FLOAT16"),
+    ("FLOAT", "FLOAT8E5M2"),
+    ("FLOAT16", "FLOAT8E5M2"),
+    ("FLOAT", "FLOAT8E5M2FNUZ"),
+    ("FLOAT16", "FLOAT8E5M2FNUZ"),
+    ("FLOAT8E5M2", "FLOAT"),
+    ("FLOAT8E5M2", "FLOAT16"),
+    ("FLOAT8E5M2FNUZ", "FLOAT"),
+    ("FLOAT8E5M2FNUZ", "FLOAT16"),
 ]
 
-vect_float32_to_floate4m3 = np.vectorize(float32_to_floate4m3)
-vect_float32_to_floate5m2 = np.vectorize(float32_to_floate5m2)
-f8_types = ("FLOATE4M3", "FLOATE5M2")
+vect_float32_to_float8e4m3 = np.vectorize(float32_to_float8e4m3)
+vect_float32_to_float8e5m2 = np.vectorize(float32_to_float8e5m2)
+f8_types = ("FLOAT8E4M3FN", "FLOAT8E4M3FNUZ", "FLOAT8E5M2", "FLOAT8E5M2FNUZ")
 
 for from_type, to_type in test_cases:
     input_type_proto = None
     output_type_proto = None
-    if "BFLOAT16" == from_type or "BFLOAT16" == to_type:
+    if from_type == "BFLOAT16" or to_type == "BFLOAT16":
         np_fp32 = np.array(
             [
                 "0.47892547",
@@ -2152,7 +2160,7 @@ for from_type, to_type in test_cases:
         np_bfp16 = (
             np_uint16_view[1::2] if little_endisan else np_uint16_view[0::2]
         )
-        if "BFLOAT16" == to_type:
+        if to_type == "BFLOAT16":
             assert from_type == "FLOAT"
             input = np_fp32.reshape([3, 4])
             output = np_bfp16.reshape([3, 4])
@@ -2197,39 +2205,88 @@ for from_type, to_type in test_cases:
             ],
             dtype=np.float32,
         )
-        if "FLOAT16" in (from_type, to_type):
-            np_fp32 = np_fp32.astype(np.float16).astype(np.float32)
-        if to_type == "FLOATE4M3":
-            expected = floate4m3_to_float32(vect_float32_to_floate4m3(np_fp32))
-            expected_tensor = make_tensor(
-                "x", TensorProto.FLOATE4M3, [3, 4], expected.tolist()
-            )
-        else:
-            expected = floate5m2_to_float32(vect_float32_to_floate5m2(np_fp32))
-            expected_tensor = make_tensor(
-                "x", TensorProto.FLOATE5M2, [3, 4], expected.tolist()
-            )
+
         if from_type == "FLOAT":
-            input = np_fp32.reshape((3, 4))
-            output = expected_tensor
+            input_values = np_fp32
+            input = make_tensor(
+                "x", TensorProto.FLOAT, [3, 4], np_fp32.tolist()
+            )
         elif from_type == "FLOAT16":
-            input = np_fp32.astype(np.float16).reshape((3, 4))
-            output = expected_tensor
-        elif to_type == "FLOAT16":
-            input = expected_tensor
-            output = expected.astype(np.float16).reshape((3, 4))
-        elif to_type == "FLOAT":
-            input = expected_tensor
-            output = expected.reshape((3, 4))
+            input_values = np_fp32.astype(np.float16).astype(np.float32)
+            input = make_tensor(
+                "x", TensorProto.FLOAT16, [3, 4], input_values.tolist()
+            )
+        elif from_type == "FLOAT8E4M3FN":
+            input_values = float8e4m3_to_float32(
+                vect_float32_to_float8e4m3(np_fp32)
+            )
+            input = make_tensor(
+                "x", TensorProto.FLOAT8E4M3FN, [3, 4], input_values.tolist()
+            )
+        elif from_type == "FLOAT8E4M3FNUZ":
+            input_values = float8e4m3_to_float32(
+                vect_float32_to_float8e4m3(np_fp32, uz=True), uz=True
+            )
+            input = make_tensor(
+                "x", TensorProto.FLOAT8E4M3FNUZ, [3, 4], input_values.tolist()
+            )
+        elif from_type == "FLOAT8E5M2":
+            input_values = float8e5m2_to_float32(
+                vect_float32_to_float8e5m2(np_fp32)
+            )
+            input = make_tensor(
+                "x", TensorProto.FLOAT8E5M2, [3, 4], input_values.tolist()
+            )
+        elif from_type == "FLOAT8E5M2FNUZ":
+            input_values = float8e5m2_to_float32(
+                vect_float32_to_float8e5m2(np_fp32, fn=True, uz=True),
+                fn=True,
+                uz=True,
+            )
+            input = make_tensor(
+                "x", TensorProto.FLOAT8E5M2FNUZ, [3, 4], input_values.tolist()
+            )
         else:
             raise ValueError(
-                f"Either from_type={from_type!r} or to_type={to_type!r} is misspelled."
+                "Conversion from {from_type} to {to_type} is not tests."
             )
-    elif "STRING" != from_type:
+
+        if to_type == "FLOAT8E4M3FN":
+            expected = float8e4m3_to_float32(
+                vect_float32_to_float8e4m3(input_values)
+            )
+        elif to_type == "FLOAT8E4M3FNUZ":
+            expected = float8e4m3_to_float32(
+                vect_float32_to_float8e4m3(input_values, uz=True), uz=True
+            )
+        elif to_type == "FLOAT8E5M2":
+            expected = float8e5m2_to_float32(
+                vect_float32_to_float8e5m2(input_values)
+            )
+        elif to_type == "FLOAT8E5M2FNUZ":
+            expected = float8e5m2_to_float32(
+                vect_float32_to_float8e5m2(input_values, fn=True, uz=True),
+                fn=True,
+                uz=True,
+            )
+        elif to_type == "FLOAT16":
+            expected = input_values.astype(np.float16).astype(np.float32)
+        elif to_type == "FLOAT":
+            expected = input_values
+        else:
+            raise ValueError(
+                "Conversion from {from_type} to {to_type} is not tests."
+            )
+        expected_tensor = make_tensor(
+            "x", getattr(TensorProto, to_type), [3, 4], expected.tolist()
+        )
+        output = expected_tensor
+
+    elif from_type != "STRING":
         input = np.random.random_sample(shape).astype(
             helper.tensor_dtype_to_np_dtype(getattr(TensorProto, from_type))
         )
-        if "STRING" == to_type:
+        if to_type == "STRING":
             # Converting input to str, then give it object dtype for generating script
             ss = []
             for i in input.flatten():
@@ -2308,19 +2365,23 @@ test_cases = [
     ("STRING", "FLOAT"),
     ("FLOAT", "BFLOAT16"),
     ("BFLOAT16", "FLOAT"),
-    ("FLOAT", "FLOATE4M3"),
-    ("FLOATE4M3", "FLOAT"),
-    ("FLOAT", "FLOATE5M2"),
-    ("FLOATE5M2", "FLOAT"),
+    ("FLOAT", "FLOAT8E4M3FN"),
+    ("FLOAT", "FLOAT8E4M3FNUZ"),
+    ("FLOAT8E4M3FN", "FLOAT"),
+    ("FLOAT8E4M3FNUZ", "FLOAT"),
+    ("FLOAT", "FLOAT8E5M2"),
+    ("FLOAT", "FLOAT8E5M2FNUZ"),
+    ("FLOAT8E5M2", "FLOAT"),
+    ("FLOAT8E5M2FNUZ", "FLOAT"),
 ]
 
-vect_float32_to_floate4m3 = np.vectorize(float32_to_floate4m3)
-vect_float32_to_floate5m2 = np.vectorize(float32_to_floate5m2)
+vect_float32_to_float8e4m3 = np.vectorize(float32_to_float8e4m3)
+vect_float32_to_float8e5m2 = np.vectorize(float32_to_float8e5m2)
 
 for from_type, to_type in test_cases:
     input_type_proto = None
     output_type_proto = None
-    if "BFLOAT16" == from_type or "BFLOAT16" == to_type:
+    if from_type == "BFLOAT16" or to_type == "BFLOAT16":
         np_fp32 = np.array(
             [
                 "0.47892547",
@@ -2343,7 +2404,7 @@ for from_type, to_type in test_cases:
         np_bfp16 = (
             np_uint16_view[1::2] if little_endisan else np_uint16_view[0::2]
         )
-        if "BFLOAT16" == to_type:
+        if to_type == "BFLOAT16":
             assert from_type == "FLOAT"
             input = np_fp32.reshape([3, 4])
             output = np_bfp16.reshape([3, 4])
@@ -2371,9 +2432,16 @@ for from_type, to_type in test_cases:
                 int(TensorProto.FLOAT), output.shape
             )
         like = output.flatten()[0:1]
-    elif from_type in ("FLOATE4M3", "FLOATE5M2") or to_type in (
-        "FLOATE4M3",
-        "FLOATE5M2",
+    elif from_type in (
+        "FLOAT8E4M3FN",
+        "FLOAT8E4M3FNUZ",
+        "FLOAT8E5M2",
+        "FLOAT8E5M2FNUZ",
+    ) or to_type in (
+        "FLOAT8E4M3FN",
+        "FLOAT8E4M3FNUZ",
+        "FLOAT8E5M2",
+        "FLOAT8E5M2FNUZ",
     ):
         np_fp32 = np.array(
             [
@@ -2392,21 +2460,47 @@ for from_type, to_type in test_cases:
             ],
             dtype=np.float32,
         )
-        if to_type == "FLOATE4M3":
-            expected = floate4m3_to_float32(vect_float32_to_floate4m3(np_fp32))
+        if to_type == "FLOAT8E4M3FN":
+            expected = float8e4m3_to_float32(
+                vect_float32_to_float8e4m3(np_fp32)
+            )
             expected_tensor = make_tensor(
-                "x", TensorProto.FLOATE4M3, [3, 4], expected.tolist()
+                "x", TensorProto.FLOAT8E4M3FN, [3, 4], expected.tolist()
             )
             like_tensor = make_tensor(
-                "x", TensorProto.FLOATE4M3, [1], expected[:1]
+                "x", TensorProto.FLOAT8E4M3FN, [1], expected[:1]
             )
-        else:
-            expected = floate5m2_to_float32(vect_float32_to_floate5m2(np_fp32))
+        elif to_type == "FLOAT8E4M3FNUZ":
+            expected = float8e4m3_to_float32(
+                vect_float32_to_float8e4m3(np_fp32, uz=True), uz=True
+            )
             expected_tensor = make_tensor(
-                "x", TensorProto.FLOATE5M2, [3, 4], expected.tolist()
+                "x", TensorProto.FLOAT8E4M3FNUZ, [3, 4], expected.tolist()
             )
             like_tensor = make_tensor(
-                "x", TensorProto.FLOATE5M2, [1], expected[:1]
+                "x", TensorProto.FLOAT8E4M3FNUZ, [1], expected[:1]
+            )
+        elif to_type == "FLOAT8E5M2":
+            expected = float8e5m2_to_float32(
+                vect_float32_to_float8e5m2(np_fp32)
+            )
+            expected_tensor = make_tensor(
+                "x", TensorProto.FLOAT8E5M2, [3, 4], expected.tolist()
+            )
+            like_tensor = make_tensor(
+                "x", TensorProto.FLOAT8E5M2, [1], expected[:1]
+            )
+        elif to_type == "FLOAT8E5M2FNUZ":
+            expected = float8e5m2_to_float32(
+                vect_float32_to_float8e5m2(np_fp32, fn=True, uz=True),
+                fn=True,
+                uz=True,
+            )
+            expected_tensor = make_tensor(
+                "x", TensorProto.FLOAT8E5M2FNUZ, [3, 4], expected.tolist()
+            )
+            like_tensor = make_tensor(
+                "x", TensorProto.FLOAT8E5M2FNUZ, [1], expected[:1]
             )
         if from_type == "FLOAT":
             input = np_fp32.reshape((3, 4))
@@ -2417,11 +2511,11 @@ for from_type, to_type in test_cases:
             input = expected_tensor
             output = expected.reshape((3, 4))
             like = output.flatten()[:1]
-    elif "STRING" != from_type:
+    elif from_type != "STRING":
         input = np.random.random_sample(shape).astype(
             helper.tensor_dtype_to_np_dtype(getattr(TensorProto, from_type))
         )
-        if "STRING" == to_type:
+        if to_type == "STRING":
             # Converting input to str, then give it object dtype for generating script
             ss = []
             for i in input.flatten():
@@ -3419,7 +3513,6 @@ There are 3 test cases, listed as following:
 <summary>conv</summary>
 
 ```python
-
 x = np.array(
     [
         [
@@ -3507,7 +3600,6 @@ expect(
 <summary>conv_with_autopad_same</summary>
 
 ```python
-
 x = np.array(
     [
         [
@@ -3553,7 +3645,6 @@ expect(node, inputs=[x, W], outputs=[y], name="test_conv_with_autopad_same")
 <summary>conv_with_strides</summary>
 
 ```python
-
 x = np.array(
     [
         [
@@ -3683,7 +3774,6 @@ There are 2 test cases, listed as following:
 <summary>with_padding</summary>
 
 ```python
-
 x = (
     np.array([2, 3, 4, 5, 6, 7, 8, 9, 10])
     .astype(np.uint8)
@@ -3719,7 +3809,6 @@ expect(
 <summary>without_padding</summary>
 
 ```python
-
 x = (
     np.array([2, 3, 4, 5, 6, 7, 8, 9, 10])
     .astype(np.uint8)
@@ -4521,7 +4610,7 @@ expect(
 
 </details>
 <details>
-<summary>e4m3</summary>
+<summary>e4m3fn</summary>
 
 ```python
 node = onnx.helper.make_node(
@@ -4531,7 +4620,7 @@ node = onnx.helper.make_node(
 )
 
 # scalar zero point and scale
-x = make_tensor("x", TensorProto.FLOATE4M3, [5], [0, 0.5, 1, 448, 104])
+x = make_tensor("x", TensorProto.FLOAT8E4M3FN, [5], [0, 0.5, 1, 448, 104])
 x_scale = np.float32(2)
 y = np.array([0.0, 1.0, 2.0, 896.0, 208.0], dtype=np.float32)
 
@@ -4539,7 +4628,7 @@ expect(
     node,
     inputs=[x, x_scale],
     outputs=[y],
-    name="test_dequantizelinear_e4m3",
+    name="test_dequantizelinear_e4m3fn",
 )
 ```
 
@@ -4555,7 +4644,7 @@ node = onnx.helper.make_node(
 )
 
 # scalar zero point and scale
-x = make_tensor("x", TensorProto.FLOATE5M2, [5], [0, 0.5, 1, 49152, 96])
+x = make_tensor("x", TensorProto.FLOAT8E5M2, [5], [0, 0.5, 1, 49152, 96])
 x_scale = np.float32(2)
 y = np.array([0.0, 1.0, 2.0, 98304.0, 192.0], dtype=np.float32)
 
@@ -5075,7 +5164,7 @@ expect(node, inputs=[x], outputs=[y], name="test_elu_default")
 
 
 ### Equal
-There are 2 test cases, listed as following:
+There are 4 test cases, listed as following:
 <details>
 <summary>equal</summary>
 
@@ -5107,6 +5196,38 @@ x = (np.random.randn(3, 4, 5) * 10).astype(np.int32)
 y = (np.random.randn(5) * 10).astype(np.int32)
 z = np.equal(x, y)
 expect(node, inputs=[x, y], outputs=[z], name="test_equal_bcast")
+```
+
+</details>
+<details>
+<summary>equal_string</summary>
+
+```python
+node = onnx.helper.make_node(
+    "Equal",
+    inputs=["x", "y"],
+    outputs=["z"],
+)
+x = np.array(["string1", "string2"], dtype=np.dtype(object))
+y = np.array(["string1", "string3"], dtype=np.dtype(object))
+z = np.equal(x, y)
+expect(node, inputs=[x, y], outputs=[z], name="test_equal_string")
+```
+
+</details>
+<details>
+<summary>equal_string_broadcast</summary>
+
+```python
+node = onnx.helper.make_node(
+    "Equal",
+    inputs=["x", "y"],
+    outputs=["z"],
+)
+x = np.array(["string1", "string2"], dtype=np.dtype(object))
+y = np.array(["string1"], dtype=np.dtype(object))
+z = np.equal(x, y)
+expect(node, inputs=[x, y], outputs=[z], name="test_equal_string_broadcast")
 ```
 
 </details>
@@ -6005,7 +6126,6 @@ expect(node, inputs=[x], outputs=[y], name="test_globalaveragepool")
 <summary>globalaveragepool_precomputed</summary>
 
 ```python
-
 node = onnx.helper.make_node(
     "GlobalAveragePool",
     inputs=["x"],
@@ -6035,7 +6155,6 @@ There are 2 test cases, listed as following:
 <summary>globalmaxpool</summary>
 
 ```python
-
 node = onnx.helper.make_node(
     "GlobalMaxPool",
     inputs=["x"],
@@ -6051,7 +6170,6 @@ expect(node, inputs=[x], outputs=[y], name="test_globalmaxpool")
 <summary>globalmaxpool_precomputed</summary>
 
 ```python
-
 node = onnx.helper.make_node(
     "GlobalMaxPool",
     inputs=["x"],
@@ -11950,7 +12068,7 @@ expect(
 
 </details>
 <details>
-<summary>e4m3</summary>
+<summary>e4m3fn</summary>
 
 ```python
 node = onnx.helper.make_node(
@@ -11961,14 +12079,16 @@ node = onnx.helper.make_node(
 
 x = np.array([0.0, 1.0, 2.0, 100000.0, 200.0]).astype(np.float32)
 y_scale = np.float32(2)
-y_zero_point = make_tensor("zero_point", TensorProto.FLOATE4M3, [1], [0])
-y = make_tensor("zero_point", TensorProto.FLOATE4M3, [5], [0, 0.5, 1, 448, 104])
+y_zero_point = make_tensor("zero_point", TensorProto.FLOAT8E4M3FN, [1], [0])
+y = make_tensor(
+    "zero_point", TensorProto.FLOAT8E4M3FN, [5], [0, 0.5, 1, 448, 104]
+)
 
 expect(
     node,
     inputs=[x, y_scale, y_zero_point],
     outputs=[y],
-    name="test_quantizelinear_e4m3",
+    name="test_quantizelinear_e4m3fn",
 )
 ```
 
@@ -11985,9 +12105,9 @@ node = onnx.helper.make_node(
 
 x = np.array([0.0, 1.0, 2.0, 100000.0, 200.0]).astype(np.float32)
 y_scale = np.float32(2)
-y_zero_point = make_tensor("zero_point", TensorProto.FLOATE5M2, [1], [0.0])
+y_zero_point = make_tensor("zero_point", TensorProto.FLOAT8E5M2, [1], [0.0])
 y = make_tensor(
-    "zero_point", TensorProto.FLOATE5M2, [5], [0, 0.5, 1, 49152, 96]
+    "zero_point", TensorProto.FLOAT8E5M2, [5], [0, 0.5, 1, 49152, 96]
 )
 
 expect(
@@ -14058,7 +14178,7 @@ for test_name, shape in test_cases.items():
 
 
 ### Resize
-There are 37 test cases, listed as following:
+There are 39 test cases, listed as following:
 <details>
 <summary>resize_downsample_scales_cubic</summary>
 
@@ -14361,6 +14481,38 @@ expect(
     inputs=[data, scales],
     outputs=[output],
     name="test_resize_downsample_scales_linear_antialias",
+)
+```
+
+</details>
+<details>
+<summary>resize_downsample_scales_linear_half_pixel_symmetric</summary>
+
+```python
+node = onnx.helper.make_node(
+    "Resize",
+    inputs=["X", "", "scales"],
+    outputs=["Y"],
+    mode="linear",
+    coordinate_transformation_mode="half_pixel_symmetric",
+)
+
+data = np.array([[[[1, 2, 3, 4]]]], dtype=np.float32)
+scales = np.array([1.0, 1.0, 1.0, 0.6], dtype=np.float32)
+
+# [[[[1.6666667, 3.3333333]]]]
+output = interpolate_nd(
+    data,
+    lambda x, _: linear_coeffs(x),
+    scale_factors=scales,
+    coordinate_transformation_mode="half_pixel_symmetric",
+).astype(np.float32)
+
+expect(
+    node,
+    inputs=[data, scales],
+    outputs=[output],
+    name="test_resize_downsample_scales_linear_half_pixel_symmetric",
 )
 ```
 
@@ -15245,6 +15397,41 @@ expect(
     inputs=[data, scales],
     outputs=[output],
     name="test_resize_upsample_scales_linear_align_corners",
+)
+```
+
+</details>
+<details>
+<summary>resize_upsample_scales_linear_half_pixel_symmetric</summary>
+
+```python
+node = onnx.helper.make_node(
+    "Resize",
+    inputs=["X", "", "scales"],
+    outputs=["Y"],
+    mode="linear",
+    coordinate_transformation_mode="half_pixel_symmetric",
+)
+
+data = np.array([[[[1, 2], [3, 4]]]], dtype=np.float32)
+scales = np.array([1.0, 1.0, 2.3, 2.94], dtype=np.float32)
+
+# [[[[1.        , 1.15986395, 1.5       , 1.84013605, 2.        ],
+#    [1.56521738, 1.72508133, 2.06521738, 2.40535343, 2.56521738],
+#    [2.43478262, 2.59464657, 2.93478262, 3.27491867, 3.43478262],
+#    [3.        , 3.15986395, 3.5       , 3.84013605, 4.        ]]]]
+output = interpolate_nd(
+    data,
+    lambda x, _: linear_coeffs(x),
+    scale_factors=scales,
+    coordinate_transformation_mode="half_pixel_symmetric",
+).astype(np.float32)
+
+expect(
+    node,
+    inputs=[data, scales],
+    outputs=[output],
+    name="test_resize_upsample_scales_linear_half_pixel_symmetric",
 )
 ```
 
@@ -21539,12 +21726,17 @@ expect(node, inputs=[x, y], outputs=[z], name="test_xor_bcast4v4d")
 # Model Test Coverage
 ## bvlc_alexnet
 
-bvlc_alexnet has 24 nodes. Of these, 24 are covered by node tests (100.0%)
+bvlc_alexnet has 40 nodes. Of these, 40 are covered by node tests (100.0%)
 
 
 <details>
 <summary>nodes</summary>
 
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
+</details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
 
@@ -21592,7 +21784,7 @@ strides: 1
 
 ## densenet121
 
-densenet121 has 910 nodes. Of these, 910 are covered by node tests (100.0%)
+densenet121 has 1746 nodes. Of these, 1746 are covered by node tests (100.0%)
 
 
 <details>
@@ -21620,6 +21812,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -21672,7 +21869,7 @@ strides: 1
 
 ## inception_v1
 
-inception_v1 has 144 nodes. Of these, 144 are covered by node tests (100.0%)
+inception_v1 has 237 nodes. Of these, 237 are covered by node tests (100.0%)
 
 
 <details>
@@ -21700,6 +21897,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -21752,7 +21954,7 @@ strides: 2
 
 ## inception_v2
 
-inception_v2 has 509 nodes. Of these, 509 are covered by node tests (100.0%)
+inception_v2 has 916 nodes. Of these, 916 are covered by node tests (100.0%)
 
 
 <details>
@@ -21780,6 +21982,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -21832,7 +22039,7 @@ strides: 2
 
 ## resnet50
 
-resnet50 has 176 nodes. Of these, 176 are covered by node tests (100.0%)
+resnet50 has 415 nodes. Of these, 415 are covered by node tests (100.0%)
 
 
 <details>
@@ -21860,6 +22067,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -21912,7 +22124,7 @@ strides: 2
 
 ## shufflenet
 
-shufflenet has 203 nodes. Of these, 203 are covered by node tests (100.0%)
+shufflenet has 446 nodes. Of these, 446 are covered by node tests (100.0%)
 
 
 <details>
@@ -21940,6 +22152,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -21997,7 +22214,7 @@ perm: 1
 
 ## squeezenet_old
 
-squeezenet_old has 66 nodes. Of these, 66 are covered by node tests (100.0%)
+squeezenet_old has 105 nodes. Of these, 105 are covered by node tests (100.0%)
 
 
 <details>
@@ -22025,6 +22242,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -22082,7 +22304,7 @@ perm: 1
 
 ## vgg19
 
-vgg19 has 46 nodes. Of these, 46 are covered by node tests (100.0%)
+vgg19 has 82 nodes. Of these, 82 are covered by node tests (100.0%)
 
 
 <details>
@@ -22110,6 +22332,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>
@@ -22167,7 +22394,7 @@ perm: 1
 
 ## zfnet512
 
-zfnet512 has 22 nodes. Of these, 22 are covered by node tests (100.0%)
+zfnet512 has 38 nodes. Of these, 38 are covered by node tests (100.0%)
 
 
 <details>
@@ -22195,6 +22422,11 @@ training_mode: 0
 <summary>Concat: 1 out of 1 attributes covered</summary>
 
 axis: 1
+</details>
+<details>
+<summary>ConstantOfShape: 1 out of 1 attributes covered</summary>
+
+value: 1
 </details>
 <details>
 <summary>Conv: 4 out of 6 attributes covered</summary>

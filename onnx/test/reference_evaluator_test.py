@@ -10,6 +10,7 @@ You can run a specific test by using the following syntax.
 """
 
 import itertools
+import math
 import unittest
 from contextlib import redirect_stdout
 from functools import wraps
@@ -26,8 +27,8 @@ from onnx.checker import check_model
 from onnx.defs import onnx_opset_version
 from onnx.helper import (
     float32_to_bfloat16,
-    float32_to_floate4m3,
-    float32_to_floate5m2,
+    float32_to_float8e4m3,
+    float32_to_float8e5m2,
     make_function,
     make_graph,
     make_model,
@@ -39,7 +40,7 @@ from onnx.helper import (
     make_tensor_value_info,
     make_value_info,
 )
-from onnx.numpy_helper import floate4m3_to_float32, floate5m2_to_float32, from_array
+from onnx.numpy_helper import float8e4m3_to_float32, float8e5m2_to_float32, from_array
 from onnx.reference import ReferenceEvaluator
 from onnx.reference.op_run import OpRun
 from onnx.reference.ops import load_op
@@ -61,7 +62,7 @@ def skip_if_no_onnxruntime(fn):
 
             del onnxruntime
         except ImportError:
-            raise unittest.SkipTest("onnxruntime not installed")
+            raise unittest.SkipTest("onnxruntime not installed") from None
         fn(*args, **kwargs)
 
     return wrapper
@@ -75,7 +76,7 @@ def skip_if_no_torch(fn):
 
             del torch
         except ImportError:
-            raise unittest.SkipTest("torch not installed")
+            raise unittest.SkipTest("torch not installed") from None
         fn(*args, **kwargs)
 
     return wrapper
@@ -89,7 +90,7 @@ def skip_if_no_torchvision(fn):
 
             del torchvision
         except ImportError:
-            raise unittest.SkipTest("torchvision not installed")
+            raise unittest.SkipTest("torchvision not installed") from None
         fn(*args, **kwargs)
 
     return wrapper
@@ -1032,7 +1033,6 @@ class TestReferenceEvaluator(unittest.TestCase):
 
     def test_custom_node(self):
         class _InvAlpha:
-
             op_domain = "custom"
 
             def __init__(self, onnx_node, run_params):  # type: ignore
@@ -1047,7 +1047,6 @@ class TestReferenceEvaluator(unittest.TestCase):
                 return (1 / (x + self.alpha),)
 
         class InvAlpha(OpRun):
-
             op_domain = "custom"
 
             def _run(self, x, alpha=None):  # type: ignore
@@ -1684,7 +1683,6 @@ class TestReferenceEvaluator(unittest.TestCase):
         )
 
     def test_col2im_2d(self):
-
         data = np.zeros([6, 28], dtype=np.float32)
         data[0][0] = 1.0
         image_shape, kernel_shape, dilations, pads, stride = (
@@ -2852,7 +2850,6 @@ class TestReferenceEvaluator(unittest.TestCase):
         ]
     )
     def test_mvn(self, opset: int, ref_opset: int = 13):
-
         X = make_tensor_value_info("X", TensorProto.FLOAT, [None, None, None, None])
         Y = make_tensor_value_info("Y", TensorProto.FLOAT, [None, None, None, None])
         nodes = [
@@ -3037,14 +3034,14 @@ class TestReferenceEvaluator(unittest.TestCase):
         model = make_model(
             make_graph(
                 [
-                    make_node("Cast", ["X"], ["f81"], to=TensorProto.FLOATE4M3),
-                    make_node("Cast", ["X"], ["f82"], to=TensorProto.FLOATE5M2),
+                    make_node("Cast", ["X"], ["f81"], to=TensorProto.FLOAT8E4M3FN),
+                    make_node("Cast", ["X"], ["f82"], to=TensorProto.FLOAT8E5M2),
                     make_node(
                         "Constant",
                         [],
                         ["C1"],
                         value=make_tensor(
-                            "C1", TensorProto.FLOATE4M3, [5], [0, 1, 2, 5e-2, 200]
+                            "C1", TensorProto.FLOAT8E4M3FN, [5], [0, 1, 2, 5e-2, 200]
                         ),
                     ),
                     make_node(
@@ -3052,7 +3049,7 @@ class TestReferenceEvaluator(unittest.TestCase):
                         [],
                         ["C2"],
                         value=make_tensor(
-                            "C2", TensorProto.FLOATE5M2, [5], [0, 1, 2, 5e-2, 200]
+                            "C2", TensorProto.FLOAT8E5M2, [5], [0, 1, 2, 5e-2, 200]
                         ),
                     ),
                     make_node("Cast", ["f81"], ["F1"], to=TensorProto.FLOAT),
@@ -3068,10 +3065,10 @@ class TestReferenceEvaluator(unittest.TestCase):
         ref = ReferenceEvaluator(model)
         data = np.array([0, 1, 2, 5e-2, 200], dtype=np.float32)
         expected1 = np.array(
-            [floate4m3_to_float32(float32_to_floate4m3(x)) for x in data]
+            [float8e4m3_to_float32(float32_to_float8e4m3(x)) for x in data]
         )
         expected2 = np.array(
-            [floate5m2_to_float32(float32_to_floate5m2(x)) for x in data]
+            [float8e5m2_to_float32(float32_to_float8e5m2(x)) for x in data]
         )
         got = ref.run(None, {"X": data})
         assert_allclose(got[0], expected1)
@@ -3081,13 +3078,13 @@ class TestReferenceEvaluator(unittest.TestCase):
 
     def test_cast_float8_output(self):
         X = make_tensor_value_info("X", TensorProto.FLOAT, [None])
-        F1 = make_tensor_value_info("F1", TensorProto.FLOATE4M3, [None])
-        F2 = make_tensor_value_info("F2", TensorProto.FLOATE5M2, [None])
+        F1 = make_tensor_value_info("F1", TensorProto.FLOAT8E4M3FN, [None])
+        F2 = make_tensor_value_info("F2", TensorProto.FLOAT8E5M2, [None])
         model = make_model(
             make_graph(
                 [
-                    make_node("Cast", ["X"], ["F1"], to=TensorProto.FLOATE4M3),
-                    make_node("Cast", ["X"], ["F2"], to=TensorProto.FLOATE5M2),
+                    make_node("Cast", ["X"], ["F1"], to=TensorProto.FLOAT8E4M3FN),
+                    make_node("Cast", ["X"], ["F2"], to=TensorProto.FLOAT8E5M2),
                 ],
                 "g",
                 [X],
@@ -3096,11 +3093,11 @@ class TestReferenceEvaluator(unittest.TestCase):
         )
         ref = ReferenceEvaluator(model)
         data = np.array([0, 1, 2, 5e-2, 200], dtype=np.float32)
-        expected1 = np.array([float32_to_floate4m3(x) for x in data])
-        expected2 = np.array([float32_to_floate5m2(x) for x in data])
+        expected1 = np.array([float32_to_float8e4m3(x) for x in data])
+        expected2 = np.array([float32_to_float8e5m2(x) for x in data])
         got = ref.run(None, {"X": data})
-        assert_allclose(expected1, got[0])
-        assert_allclose(expected2, got[1])
+        self.assertEqual(expected1.tolist(), got[0].tolist())
+        self.assertEqual(expected2.tolist(), got[1].tolist())
 
     def test_cast_bfloat16_output(self):
         X = make_tensor_value_info("X", TensorProto.FLOAT, [None])
@@ -3119,7 +3116,7 @@ class TestReferenceEvaluator(unittest.TestCase):
         data = np.array([0, 1, 2, 1e5, 200], dtype=np.float32)
         expected1 = np.array([float32_to_bfloat16(x) for x in data])
         got = ref.run(None, {"X": data})
-        assert_allclose(expected1, got[0])
+        self.assertEqual(expected1.tolist(), got[0].tolist())
 
     def test_quantize_linear_e4m3(self):
         X = make_tensor_value_info("X", TensorProto.FLOAT, [None])
@@ -3137,7 +3134,7 @@ class TestReferenceEvaluator(unittest.TestCase):
                         "Constant",
                         [],
                         ["zero"],
-                        value=make_tensor("zero", TensorProto.FLOATE4M3, [1], [0.0]),
+                        value=make_tensor("zero", TensorProto.FLOAT8E4M3FN, [1], [0.0]),
                     ),
                     make_node("QuantizeLinear", ["X", "scale", "zero"], ["T"]),
                     make_node("DequantizeLinear", ["T", "scale"], ["Y"], axis=0),
@@ -3169,7 +3166,7 @@ class TestReferenceEvaluator(unittest.TestCase):
                         "Constant",
                         [],
                         ["zero"],
-                        value=make_tensor("zero", TensorProto.FLOATE5M2, [1], [0.0]),
+                        value=make_tensor("zero", TensorProto.FLOAT8E5M2, [1], [0.0]),
                     ),
                     make_node("QuantizeLinear", ["X", "scale", "zero"], ["T"]),
                     make_node("DequantizeLinear", ["T", "scale"], ["Y"], axis=0),
@@ -3184,6 +3181,41 @@ class TestReferenceEvaluator(unittest.TestCase):
         expected = np.array([0, 1, 2, 98304, 192], dtype=np.float32)
         got = ref.run(None, {"X": data})
         assert_allclose(expected, got[0])
+
+    def test_lrn(self):
+        def _expected(x, alpha, beta, bias, size):
+            square_sum = np.zeros((5, 5, 5, 5)).astype(np.float32)
+            for n, c, h, w in np.ndindex(x.shape):
+                square_sum[n, c, h, w] = sum(
+                    x[
+                        n,
+                        max(0, c - int(math.floor((size - 1) / 2))) : min(
+                            5, c + int(math.ceil((size - 1) / 2)) + 1
+                        ),
+                        h,
+                        w,
+                    ]
+                    ** 2
+                )
+            y = x / ((bias + (alpha / size) * square_sum) ** beta)
+            return y
+
+        # keepdims is ignored in that case
+        alpha = 0.0002
+        beta = 0.5
+        bias = 2.0
+        size = 3
+        X = make_tensor_value_info("X", TensorProto.FLOAT, [5, 5, 50, 50])
+        Z = make_tensor_value_info("Z", TensorProto.UNDEFINED, None)
+        nodes = [
+            make_node("LRN", ["X"], ["Z"], alpha=alpha, beta=beta, bias=bias, size=size)
+        ]
+        model = make_model(make_graph(nodes, "g", [X], [Z]))
+        ref = ReferenceEvaluator(model)
+        data = np.random.rand(5, 5, 5, 5).astype(np.float32)
+        got = ref.run(None, {"X": data})
+        expected = _expected(data, alpha, beta, bias, size)
+        self.assertEqual(len(expected), len(got[0]))
 
 
 if __name__ == "__main__":

@@ -11,8 +11,13 @@ from onnx.defs import get_all_schemas_with_history, get_schema, onnx_opset_versi
 from onnx.helper import make_node
 from onnx.numpy_helper import to_array
 from onnx.onnx_pb import AttributeProto, GraphProto, NodeProto, TypeProto
-
-from .custom_element_types import bfloat16, floate4m3, floate5m2
+from onnx.reference.custom_element_types import (
+    bfloat16,
+    float8e4m3fn,
+    float8e4m3fnuz,
+    float8e5m2,
+    float8e5m2fnuz,
+)
 
 
 def _split_class_name(name):  # type: ignore
@@ -127,7 +132,8 @@ def to_sparse_tensor(att: AttributeProto) -> SparseTensor:
 
 def to_array_extended(tensor: TensorProto) -> np.ndarray:
     """
-    Similar to :func:`to_array` but deals with bfloat16, floate4m3, floate5m2.
+    Similar to :func:`to_array` but deals with bfloat16,
+    float8e4m3fn, float8e4m3fnuz, float8e5m2, float8e5m2fnuz.
     """
     elem_type = tensor.data_type
     if elem_type == TensorProto.BFLOAT16:
@@ -138,18 +144,22 @@ def to_array_extended(tensor: TensorProto) -> np.ndarray:
             y[i] = d
         return y.reshape(shape)
 
-    if elem_type == TensorProto.FLOATE4M3:
-        data = tensor.int32_data
-        shape = tuple(tensor.dims)
-        y = np.empty(shape, dtype=floate4m3).ravel()
-        for i, d in enumerate(data):
-            y[i] = d
-        return y.reshape(shape)
+    if elem_type in (
+        TensorProto.FLOAT8E4M3FN,
+        TensorProto.FLOAT8E4M3FNUZ,
+        TensorProto.FLOAT8E5M2,
+        TensorProto.FLOAT8E5M2FNUZ,
+    ):
+        m = {
+            TensorProto.FLOAT8E4M3FN: float8e4m3fn,
+            TensorProto.FLOAT8E4M3FNUZ: float8e4m3fnuz,
+            TensorProto.FLOAT8E5M2: float8e5m2,
+            TensorProto.FLOAT8E5M2FNUZ: float8e5m2fnuz,
+        }
 
-    if elem_type == TensorProto.FLOATE5M2:
         data = tensor.int32_data
         shape = tuple(tensor.dims)
-        y = np.empty(shape, dtype=floate5m2).ravel()
+        y = np.empty(shape, dtype=m[elem_type]).ravel()  # type: ignore[index]
         for i, d in enumerate(data):
             y[i] = d
         return y.reshape(shape)
@@ -234,7 +244,9 @@ class OpRun(ABC):
         Converts an attribute value into a python value.
         """
         if att.type == AttributeProto.GRAPH:
-            from .reference_evaluator import ReferenceEvaluator  # type: ignore
+            from onnx.reference.reference_evaluator import (
+                ReferenceEvaluator,  # type: ignore
+            )
 
             new_ops = self.run_params.get("new_ops", None)
             return ReferenceEvaluator(

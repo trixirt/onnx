@@ -3,8 +3,12 @@
 
 import numpy as np
 
-from ._common_classifier import compute_probit, compute_softmax_zero, expit
-from ._op_run_aionnxml import OpRunAiOnnxMl
+from onnx.reference.ops.aionnxml._common_classifier import (
+    compute_probit,
+    compute_softmax_zero,
+    expit,
+)
+from onnx.reference.ops.aionnxml._op_run_aionnxml import OpRunAiOnnxMl
 
 
 class LinearClassifier(OpRunAiOnnxMl):
@@ -66,7 +70,7 @@ class LinearClassifier(OpRunAiOnnxMl):
                 for j in range(scores.shape[1]):
                     scores[i, j] = compute_probit(scores[i, j])
         else:
-            raise NotImplementedError(f"Unknown post_transform: '{post_transform}'.")
+            raise NotImplementedError("Unknown post_transform: '{post_transform}'.")
 
         if scores.shape[1] > 1:
             labels = np.argmax(scores, axis=1)

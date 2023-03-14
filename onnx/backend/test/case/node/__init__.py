@@ -7,6 +7,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 import onnx
+from onnx.backend.test.case.test_case import TestCase
+from onnx.backend.test.case.utils import import_recursive
 from onnx.onnx_pb import (
     AttributeProto,
     FunctionProto,
@@ -16,9 +18,6 @@ from onnx.onnx_pb import (
     TensorProto,
     TypeProto,
 )
-
-from ..test_case import TestCase
-from ..utils import import_recursive
 
 _NodeTestCases = []
 _TargetOpType = None
@@ -234,8 +233,8 @@ def _make_test_model_gen_version(graph: GraphProto, **kwargs: Any) -> ModelProto
 # the latest opset vesion that supports before targeted opset version
 def expect(
     node_op: onnx.NodeProto,
-    inputs: Sequence[np.ndarray],
-    outputs: Sequence[np.ndarray],
+    inputs: Sequence[Union[np.ndarray, TensorProto]],
+    outputs: Sequence[Union[np.ndarray, TensorProto]],
     name: str,
     **kwargs: Any,
 ) -> None:

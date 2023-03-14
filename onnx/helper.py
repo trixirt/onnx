@@ -68,6 +68,7 @@ VERSION_TABLE: VersionTableType = [
     ("1.11.0", 8, 16, 3, 1),
     ("1.12.0", 8, 17, 3, 1),
     ("1.13.0", 8, 18, 3, 1),
+    ("1.13.1", 8, 18, 3, 1),
 ]
 
 VersionMapType = Dict[Tuple[str, int], int]
@@ -93,14 +94,25 @@ def create_op_set_id_version_map(table: VersionTableType) -> VersionMapType:
 OP_SET_ID_VERSION_MAP = create_op_set_id_version_map(VERSION_TABLE)
 
 
-def find_min_ir_version_for(opsetidlist: List[OperatorSetIdProto]) -> int:
-    """Given list of opset ids, determine minimum IR version required"""
+def find_min_ir_version_for(
+    opsetidlist: List[OperatorSetIdProto], ignore_unknown: bool = False
+) -> int:
+    """Given list of opset ids, determine minimum IR version required.
+
+    Arguments:
+        opsetidlist (List[OperatorSetIdProto]): The list of OperatorSetIdProto
+        ignore_unknown (bool): If True, ignore unknown domain and return default min version for that domain.
+    Returns:
+        The minimum IR version required (integer)
+    """
     default_min_version = 3
 
     def find_min(domain: Union[str, None], version: int) -> int:
         key = (domain if domain else "ai.onnx", version)
         if key in OP_SET_ID_VERSION_MAP:
             return OP_SET_ID_VERSION_MAP[key]
+        if ignore_unknown:
+            return default_min_version
         raise ValueError("Unsupported opset-version.")
 
     if opsetidlist:
@@ -236,10 +248,13 @@ def make_function(
     nodes: Sequence[NodeProto],
     opset_imports: Sequence[OperatorSetIdProto],
     attributes: Optional[Sequence[str]] = None,
+    attribute_protos: Optional[Sequence[AttributeProto]] = None,
     doc_string: Optional[str] = None,
 ) -> FunctionProto:
     if attributes is None:
         attributes = []
+    if attribute_protos is None:
+        attribute_protos = []
     f = FunctionProto()
     f.domain = domain
     f.name = fname
@@ -248,6 +263,7 @@ def make_function(
     f.node.extend(nodes)
     f.opset_import.extend(opset_imports)
     f.attribute.extend(attributes)
+    f.attribute_proto.extend(attribute_protos)
     if doc_string:
         f.doc_string = doc_string
     return f
@@ -301,7 +317,7 @@ def make_model_gen_version(graph: GraphProto, **kwargs: Any) -> ModelProto:
 
 def set_model_props(model: ModelProto, dict_value: Dict[str, str]) -> None:
     del model.metadata_props[:]
-    for (k, v) in dict_value.items():
+    for k, v in dict_value.items():
         entry = model.metadata_props.add()
         entry.key = k
         entry.value = v
@@ -334,115 +350,191 @@ def float32_to_bfloat16(fval: float, truncate: bool = False) -> int:
     return (ival + rounded) >> 16
 
 
-def float32_to_floate4m3(fval: float, scale: float = 1.0) -> int:
+def float32_to_float8e4m3(  # pylint: disable=too-many-statements
+    fval: float, scale: float = 1.0, fn: bool = True, uz: bool = False
+) -> int:
     """
-    Convert a float32 value to a floate4m3 (as int).
+    Convert a float32 value to a float8, e4m3 (as int).
 
     :param fval: float to convert
     :param scale: scale, divide *fval* by *scale* before casting it
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: converted float
 
     See :ref:`onnx-detail-float8` for technical details.
     """
+    if not fn:
+        raise NotImplementedError(
+            "float32_to_float8e4m3 not implemented with fn=False."
+        )
     x = fval / scale
     b = int.from_bytes(struct.pack("<f", np.float32(x)), "little")
     ret = (b & 0x80000000) >> 24  # sign
-    # handle specific cases
-    if (b & 0x7FC00000) == 0x7FC00000:
-        return 0xFF | ret
-    e = (b & 0x7F800000) >> 23  # exponent
-    m = b & 0x007FFFFF  # mantissa
+    if uz:
+        if (b & 0x7FC00000) == 0x7FC00000:
+            return 0x80
+        if np.isinf(x):
+            return 0x80
+        e = (b & 0x7F800000) >> 23  # exponent
+        m = b & 0x007FFFFF  # mantissa
 
-    if e != 0:
-        # exponent is not zero, when it is, closest float 8 is zero
-        if e < 117:
-            # exponent is too small
-            pass
-        elif e < 118:
-            # float 8 exponent is zero
-            ret |= 1
-            if (m >> 23) & 1:
-                # rounding
-                ret += 1
-        elif e < 121:  # 127 - 7 + 1
-            # float 8 exponent is zero except if the rounding
-            # moves the next float 8 and this one needs an exponent != 0
-            d = 120 - e
-            ret |= 1 << (2 - d)
-            ret |= m >> (21 + d)
-            if (m >> (20 + d)) & 1:
-                # rounding
-                ret += 1
-        elif e < 136:  # 127 + 8 + 1
-            # float 8 exponent is not zero
-            ex = e - 120  # 127 - 7
-            if ex == 0:
-                ret |= 0x4
-                ret |= m >> 21
+        if e != 0:
+            if e < 116:
+                pass
+            elif e < 117:
+                ret |= 1
+                if (m >> 23) & 1:
+                    # rounding
+                    ret += 1
+            elif e < 120:  # 127 - 8 + 1
+                d = 119 - e
+                ret |= 1 << (2 - d)
+                ret |= m >> (21 + d)
+                if (m >> (20 + d)) & 1:
+                    # rounding
+                    ret += 1
+            elif e < 135:  # 127 + 8
+                ex = e - 119  # 127 - 8
+                if ex == 0:
+                    ret |= 0x4
+                    ret |= m >> 21
+                else:
+                    ret |= ex << 3
+                    ret |= m >> 20
+                if (m & 0x80000) and (ret & 0x7F) < 0x7F:
+                    # rounding
+                    ret += 1
             else:
-                ret |= ex << 3
-                ret |= m >> 20
-            if m & 0x80000:
-                # rounding
-                ret += 1
-        else:
-            ret |= 126  # 01111110
-    return int(ret)
+                ret |= 0x7F  # 01111110
+        return int(ret)
+    else:
+        if (b & 0x7FC00000) == 0x7FC00000:
+            return 0x7F | ret
+        if np.isinf(x):
+            return 0x7F | ret
+        e = (b & 0x7F800000) >> 23  # exponent
+        m = b & 0x007FFFFF  # mantissa
+
+        if e != 0:
+            if e < 117:
+                pass
+            elif e < 118:
+                ret |= 1
+                if (m >> 23) & 1:
+                    # rounding
+                    ret += 1
+            elif e < 121:  # 127 - 7 + 1
+                d = 120 - e
+                ret |= 1 << (2 - d)
+                ret |= m >> (21 + d)
+                if (m >> (20 + d)) & 1:
+                    # rounding
+                    ret += 1
+            elif e < 136:  # 127 + 8 + 1
+                ex = e - 120  # 127 - 7
+                if ex == 0:
+                    ret |= 0x4
+                    ret |= m >> 21
+                else:
+                    ret |= ex << 3
+                    ret |= m >> 20
+                    if (ret & 0x7F) == 0x7F:
+                        ret &= 0xFE
+                if (m & 0x80000) and (ret & 0x7F) < 0x7E:
+                    # rounding
+                    ret += 1
+            else:
+                ret |= 126  # 01111110
+        return int(ret)
 
 
-def float32_to_floate5m2(fval: float, scale: float = 1.0) -> int:
+def float32_to_float8e5m2(  # pylint: disable=too-many-statements
+    fval: float, scale: float = 1.0, fn: bool = False, uz: bool = False
+) -> int:
     """
-    Convert a float32 value to a floate5m2 (as int).
+    Convert a float32 value to a float8, e5m2 (as int).
 
     :param fval: float to convert
     :param scale: scale, divide *fval* by *scale* before casting it
+    :param fn: no infinite values
+    :param uz: no negative zero
     :return: converted float
     """
     x = fval / scale
     b = int.from_bytes(struct.pack("<f", np.float32(x)), "little")
     ret = (b & 0x80000000) >> 24  # sign
-    # handle specific cases
-    if (b & 0x7FC00000) == 0x7FC00000:
-        return 0xFF | ret
-    e = (b & 0x7F800000) >> 23  # exponent
-    m = b & 0x007FFFFF  # mantissa
 
-    if e != 0:
-        # exponent is not zero, when it is, closest float 8 is zero
-        if e < 110:
-            # exponent is too small
-            pass
-        elif e < 111:
-            # float 8 exponent is zero
-            ret |= 1
-            if (m >> 23) & 1:
-                # rounding
-                # may be unused
-                ret += 1
-        elif e < 113:  # 127 - 15 + 1
-            # float 8 exponent is zero except if the rounding
-            # moves the next float 8 and this one needs an exponent != 0
-            d = 112 - e
-            ret |= 1 << (1 - d)
-            ret |= m >> (22 + d)
-            if (m >> (21 + d)) & 1:
-                # rounding
-                ret += 1
-        elif e < 144:  # 127 + 16 + 1
-            # float 8 exponent is not zero
-            ex = e - 112  # 127 - 15
-            ret |= ex << 2
-            ret |= m >> 21
-            if m & 0x100000:
-                # rounding
-                ret += 1
-        elif e == 255 and m == 0:  # inf
-            # infinity
-            ret |= 124
-        else:
-            # highest values
-            ret |= 123
-    return int(ret)
+    if fn and uz:
+        if (b & 0x7FC00000) == 0x7FC00000:
+            return 0x80
+        e = (b & 0x7F800000) >> 23  # exponent
+        m = b & 0x007FFFFF  # mantissa
+
+        if e != 0:
+            if e < 109:
+                pass
+            elif e < 110:
+                ret |= 1
+                if (m >> 23) & 1:
+                    # rounding
+                    # may be unused
+                    ret += 1
+            elif e < 112:  # 127 - 16 + 1
+                d = 111 - e
+                ret |= 1 << (1 - d)
+                ret |= m >> (22 + d)
+                if (m >> (21 + d)) & 1:
+                    # rounding
+                    ret += 1
+            elif e < 143:  # 127 + 15 + 1
+                ex = e - 111  # 127 - 16
+                ret |= ex << 2
+                ret |= m >> 21
+                if (m & 0x100000) and (ret & 0x7F) < 0x7F:
+                    # rounding
+                    ret += 1
+            elif e == 255 and m == 0:  # inf
+                return 0x80
+            else:
+                ret |= 0x7F  # last possible number
+        return int(ret)
+    elif not fn and not uz:
+        if (b & 0x7FC00000) == 0x7FC00000:
+            return 0x7F | ret
+        e = (b & 0x7F800000) >> 23  # exponent
+        m = b & 0x007FFFFF  # mantissa
+
+        if e != 0:
+            if e < 110:
+                pass
+            elif e < 111:
+                ret |= 1
+                if (m >> 23) & 1:
+                    # rounding
+                    # may be unused
+                    ret += 1
+            elif e < 113:  # 127 - 15 + 1
+                d = 112 - e
+                ret |= 1 << (1 - d)
+                ret |= m >> (22 + d)
+                if (m >> (21 + d)) & 1:
+                    # rounding
+                    ret += 1
+            elif e < 143:  # 127 + 15 + 1
+                ex = e - 112  # 127 - 15
+                ret |= ex << 2
+                ret |= m >> 21
+                if (m & 0x100000) and (ret & 0x7F) < 0x7B:
+                    # rounding
+                    ret += 1
+            elif e == 255 and m == 0:  # inf
+                ret |= 124
+            else:
+                ret |= 123
+        return int(ret)
+    else:
+        raise NotImplementedError("fn and uz must be both False or True.")
 
 
 def make_tensor(
@@ -482,7 +574,12 @@ def make_tensor(
         # which has the wrong itemsize.
         if data_type == TensorProto.BFLOAT16:
             expected_size = 2
-        elif data_type in (TensorProto.FLOATE4M3, TensorProto.FLOATE5M2):
+        elif data_type in (
+            TensorProto.FLOAT8E4M3FN,
+            TensorProto.FLOAT8E4M3FNUZ,
+            TensorProto.FLOAT8E5M2,
+            TensorProto.FLOAT8E5M2FNUZ,
+        ):
             expected_size = 1
         else:
             expected_size = np_dtype.itemsize
@@ -511,18 +608,26 @@ def make_tensor(
             )
         elif data_type in (
             TensorProto.BFLOAT16,
-            TensorProto.FLOATE4M3,
-            TensorProto.FLOATE5M2,
+            TensorProto.FLOAT8E4M3FN,
+            TensorProto.FLOAT8E4M3FNUZ,
+            TensorProto.FLOAT8E5M2,
+            TensorProto.FLOAT8E5M2FNUZ,
         ):
             fcast = {
                 TensorProto.BFLOAT16: float32_to_bfloat16,
-                TensorProto.FLOATE4M3: float32_to_floate4m3,
-                TensorProto.FLOATE5M2: float32_to_floate5m2,
+                TensorProto.FLOAT8E4M3FN: float32_to_float8e4m3,
+                TensorProto.FLOAT8E4M3FNUZ: lambda *args: float32_to_float8e4m3(  # type: ignore[misc]
+                    *args, uz=True
+                ),
+                TensorProto.FLOAT8E5M2: float32_to_float8e5m2,
+                TensorProto.FLOAT8E5M2FNUZ: lambda *args: float32_to_float8e5m2(  # type: ignore[misc]
+                    *args, fn=True, uz=True
+                ),
             }[
                 data_type  # type: ignore[index]
             ]
             vals = list(
-                map(
+                map(  # type: ignore[call-overload]
                     fcast,
                     np.array(vals).astype(np_dtype).flatten().tolist(),
                 )
@@ -815,11 +920,10 @@ def make_tensor_type_proto(
         # an empty shape!
         tensor_shape_proto.dim.extend([])
 
-        if shape_denotation:
-            if len(shape_denotation) != len(shape):
-                raise ValueError(
-                    "Invalid shape_denotation. Must be of the same length as shape."
-                )
+        if shape_denotation and len(shape_denotation) != len(shape):
+            raise ValueError(
+                "Invalid shape_denotation. Must be of the same length as shape."
+            )
 
         for i, d in enumerate(shape):
             dim = tensor_shape_proto.dim.add()
@@ -880,11 +984,10 @@ def make_sparse_tensor_type_proto(
         # an empty shape!
         sparse_tensor_shape_proto.dim.extend([])
 
-        if shape_denotation:
-            if len(shape_denotation) != len(shape):
-                raise ValueError(
-                    "Invalid shape_denotation. Must be of the same length as shape."
-                )
+        if shape_denotation and len(shape_denotation) != len(shape):
+            raise ValueError(
+                "Invalid shape_denotation. Must be of the same length as shape."
+            )
 
         for i, d in enumerate(shape):
             dim = sparse_tensor_shape_proto.dim.add()

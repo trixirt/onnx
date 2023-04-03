@@ -2,18 +2,15 @@
 .. _onnx-detail-float8:
 
 ======================
-Float stored on 8 bits
+Float stored in 8 bits
 ======================
-
-.. contents::
-    :local:
 
 Papers
 ======
 
 Two papers have been published in 2022 to introduce floats
 stored on a byte as opposed to float 32 stored on 4 bytes.
-The float precision is much lower but the training precision
+The float precision is much lower but the training accuracy
 does not suffer too much.
 
 `FP8 Formats for Deep Learning <https://arxiv.org/abs/2209.05433>`_
@@ -38,22 +35,19 @@ to support a limited set of operators to enable computation
 with float 8.
 
 - `E4M3FN`: 1 bit for the sign, 4 bits for the exponents, 3 bits for the mantissa,
-  only nan values and no infinitie values (FN),
+  only nan values and no infinite values (FN),
 - `E4M3FNUZ`: 1 bit for the sign, 4 bits for the exponents, 3 bits for the mantissa,
-  only nan values and no infinitie values (FN), no negative zero (UZ)
+  only nan values and no infinite values (FN), no negative zero (UZ)
 - `E5M2`: 1 bit for the sign, 5 bits for the exponents, 2 bits for the mantissa,
 - `E5M2FNUZ`: 1 bit for the sign, 5 bits for the exponents, 2 bits for the mantissa,
-  only nan values and no infinitie values (FN), no negative zero (UZ)
+  only nan values and no infinite values (FN), no negative zero (UZ)
 
 The implementation is usually hardware dependant.
-NVIDIA implements `E4M3FN` and `E5M2` is its latest graphical processor.
+NVIDIA, Intel and Arm implement `E4M3FN` and `E5M2` is its latest graphical processor.
 GraphCore does the same only with `E4M3FNUZ` and `E5M2FNUZ`.
 
-FP8 from IEEE
-=============
-
-Definition
-++++++++++
+E4M3FN and E5M2
+===============
 
 :math:`S` stands for the sign. :math:`10_2` describe a number base 2.
 
@@ -101,21 +95,8 @@ The float value is defined by the following expressions:
      - :math:`(-1)^S 2^{-6} \sum_{i=0}^2 b_i 2^{i-3}`
      - :math:`(-1)^S 2^{-14} \sum_{i=0}^1 b_i 2^{i-2}`
 
-Cast
-++++
-
-Cast from float 8 to
-`float 16 <https://en.wikipedia.org/wiki/Half-precision_floating-point_format>`_ (or E5M10),
-`bfloat16 <https://en.wikipedia.org/wiki/Bfloat16_floating-point_format>`_ (or E8M7),
-`float32 <https://en.wikipedia.org/wiki/Single-precision_floating-point_format>`_ (or E8M23) is easier.
-The cast is exact. The tricky part is to distinguish between exponent = 0 and :math:`neq 0`.
-
-Cast to float 8 consists in finding the closest float 8
-to the original float 32 value. It is usually done by shifting
-and truncating. The tricky part is to handle rounding.
-
-UZ
-++
+E4M3FNUZ and E5M2FNUZ
+=====================
 
 The previous types support positive and negative zero, positive and negative nan.
 Another type definition was introduced by GraphCore to make a better use
@@ -166,3 +147,51 @@ The float value is defined by the following expressions:
    * - exponent :math:`=` 0
      - :math:`(-1)^S 2^{-7} \sum_{i=0}^2 b_i 2^{i-3}`
      - :math:`(-1)^S 2^{-15} \sum_{i=0}^1 b_i 2^{i-2}`
+
+Cast
+====
+
+Cast from float 8 to
+`float 16 <https://en.wikipedia.org/wiki/Half-precision_floating-point_format>`_ (or E5M10),
+`bfloat16 <https://en.wikipedia.org/wiki/Bfloat16_floating-point_format>`_ (or E8M7),
+`float32 <https://en.wikipedia.org/wiki/Single-precision_floating-point_format>`_ (or E8M23) is easier.
+The cast is exact. The conversion does not necessarily preserve the sign for
+specific values such as `-0` or `-NaN`.
+
+Cast to float 8 consists in finding the closest float 8
+to the original float 32 value. It is usually done by shifting
+and truncating.
+
+The conversion may with saturation, every value out of range 
+becomes the highest available value. Next table summarizes
+all the case. `[x]` means the value rounded to
+the target mantissa width.
+
+=============== ========= ========== ========= ===========
+x               E4M3FN    E4M3FNUZ   E5M2      E5M2FNUZ
+=============== ========= ========== ========= ===========
+0               0         0          0         0
+-0              -0        0          -0        0
+NaN             NaN       NaN        NaN       NaN
+Inf             FLT_MAX   NaN        FLT_MAX   NaN
+-Inf            -FLT_MAX  NaN        -FLT_MAX  NaN
+[x] > FLT_MAX   FLT_MAX   FLT_MAX    FLT_MAX   FLT_MAX
+[x] < -FLT_MAX  -FLT_MAX  -FLT_MAX   -FLT_MAX  -FLT_MAX
+else            RNE       RNE        RNE       RNE
+=============== ========= ========== ========= ===========
+
+The conversion may also be defined without any saturation.
+
+=============== ======== ========== ====== ===========
+x               E4M3FN   E4M3FNUZ   E5M2   E5M2FNUZ
+=============== ======== ========== ====== ===========
+0               0        0          0      0
+-0              -0       0          -0     0
+NaN             NaN      NaN        NaN    NaN
+-NaN            -NaN     NaN        -NaN   NaN
+Inf             NaN      NaN        Inf    NaN
+-Inf            -NaN     NaN        -Inf   NaN
+[x] > FLT_MAX   NaN      NaN        Inf    NaN
+[x] < -FLT_MAX  NaN      NaN        -Inf   NaN
+else            RNE      RNE        RNE    RNE
+=============== ======== ========== ====== ===========

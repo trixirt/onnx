@@ -21,7 +21,7 @@ in the 'DataType' enum field in the TensorProto message.
 
 Casting from string tensor in plain (e.g., "3.14" and "1000") and scientific numeric representations
 (e.g., "1e-5" and "1E8") to float types is supported. For example, converting string "100.5" to an integer may
-result 100. There are some string literals reserved for special floating-point values;
+yield result 100. There are some string literals reserved for special floating-point values;
 "+INF" (and "INF"), "-INF", and "NaN" are positive infinity, negative infinity, and not-a-number, respectively.
 Any string which can exactly match "+INF" in a case-insensitive way would be mapped to positive infinite. Similarly,
 this case-insensitive rule is applied to "INF" and "NaN". When casting from numeric tensors
@@ -34,14 +34,17 @@ User must be aware of precision loss and value change caused by range difference
 For example, a 64-bit float 3.1415926459 may be round to a 32-bit float 3.141592. Similarly, converting
 an integer 36 to Boolean may produce 1 because we truncate bits which can't be stored in the targeted type.
 
-In more detail, the conversion among numerical types should follow these rules:
+In more detail, the conversion among numerical types should follow these rules
+if the destination type is not a float 8 type.
 
 * Casting from floating point to:
-  * floating point: +/- infinity if OOR (out of range).
+  * floating point: +/- highest value if OOR (out of range),
+    infinities are converted to NaN if infinity is not available
   * fixed point: undefined if OOR.
   * bool: +/- 0.0 to False; all else to True.
 * Casting from fixed point to:
-  * floating point: +/- infinity if OOR. (+ infinity in the case of uint)
+  * floating point: +/- highest value if OOR (out of range),
+    infinities are converted to NaN if infinity is not available
   * fixed point: when OOR, discard higher bits and reinterpret (with respect to two's complement representation for
     signed types). For example, 200 (int16) -> -56 (int8).
   * bool: zero to False; nonzero to True.
@@ -49,6 +52,36 @@ In more detail, the conversion among numerical types should follow these rules:
   * floating point: `{1.0, 0.0}`.
   * fixed point: `{1, 0}`.
   * bool: no change.
+
+Float 8 type were introduced to speed up the training of
+deep models. By default the conversion of a float *x* obeys
+to the following rules. `[x]` means the value rounded to
+the target mantissa width.
+
+| x | E4M3FN | E4M3FNUZ | E5M2 | E5M2FNUZ |
+|------|----|----|----|----|
+| 0 | 0 | 0 | 0 | 0 |
+|-0 | -0 | 0 | -0 | 0 |
+| NaN | NaN | NaN | NaN | NaN |
+| Inf | FLT_MAX | NaN | FLT_MAX | NaN |
+| -Inf | -FLT_MAX | NaN | -FLT_MAX | NaN |
+| [x] > FLT_MAX | FLT_MAX | FLT_MAX | FLT_MAX | FLT_MAX |
+| [x] < -FLT_MAX | -FLT_MAX | -FLT_MAX | -FLT_MAX | -FLT_MAX |
+| else | RNE | RNE | RNE | RNE |
+
+The behavior changes if the parameter 'saturate' is set to False.
+The rules then become:
+
+| x | E4M3FN | E4M3FNUZ | E5M2 | E5M2FNUZ |
+|------|----|----|----|----|
+| 0 | 0 | 0 | 0 | 0 |
+|-0 | -0 | 0 | -0 | 0 |
+| NaN | NaN | NaN | NaN | NaN |
+| Inf | NaN | NaN | Inf | NaN |
+| -Inf | -NaN | NaN | -Inf | NaN |
+| [x] > FLT_MAX | NaN | NaN | Inf | NaN |
+| [x] < -FLT_MAX | NaN | NaN | -Inf | NaN |
+| else | RNE | RNE | RNE | RNE |
 )DOC";
 
 ONNX_OPERATOR_SET_SCHEMA(
@@ -61,6 +94,14 @@ ONNX_OPERATOR_SET_SCHEMA(
             "The data type to which the elements of the input tensor are cast. "
             "Strictly must be one of the types from DataType enum in TensorProto",
             AttributeProto::INT)
+        .Attr(
+            "saturate",
+            "The parameter defines how the conversion behaves if an input value is out of "
+            "range of the destination type. It only applies for float 8 conversion "
+            "(float8e4m3fn, float8e4m3fnuz, float8e5m2, float8e5m2fnuz). It is true by default. "
+            "All cases are fully described in two tables inserted in the operator description.",
+            AttributeProto::INT,
+            static_cast<int64_t>(1))
         .Input(0, "input", "Input tensor to be cast.", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
         .Output(
             0,
@@ -135,6 +176,14 @@ ONNX_OPERATOR_SET_SCHEMA(
     19,
     OpSchema()
         .SetDoc(CastLike_ver19_doc)
+        .Attr(
+            "saturate",
+            "The parameter defines how the conversion behaves if an input value is out of "
+            "range of the destination type. It only applies for float 8 conversion "
+            "(float8e4m3fn, float8e4m3fnuz, float8e5m2, float8e5m2fnuz). It is true by default. "
+            "Please refer to operator Cast description for further details.",
+            AttributeProto::INT,
+            static_cast<int64_t>(1))
         .Input(0, "input", "Input tensor to be cast.", "T1", OpSchema::Single, true, 1, OpSchema::Differentiable)
         .Input(
             1,
@@ -234,7 +283,7 @@ to -1 cannot be determined uniquely.
 
 ONNX_OPERATOR_SET_SCHEMA(
     Reshape,
-    14,
+    19,
     OpSchema()
         .SetDoc(Reshape_ver14_doc)
         .Attr(
@@ -258,7 +307,7 @@ ONNX_OPERATOR_SET_SCHEMA(
         .Output(0, "reshaped", "Reshaped data.", "T", OpSchema::Single, true, 1, OpSchema::Differentiable)
         .TypeConstraint(
             "T",
-            OpSchema::all_tensor_types_with_bfloat(),
+            OpSchema::all_tensor_types_with_bfloat_float8(),
             "Constrain input and output types to all tensor types.")
         .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
           // Type inference
@@ -437,7 +486,7 @@ Output: [3]
 
 ONNX_OPERATOR_SET_SCHEMA(
     Shape,
-    15,
+    19,
     OpSchema()
         .SetDoc(Shape_ver15_doc)
         .Input(0, "data", "An input tensor.", "T", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
@@ -455,7 +504,7 @@ ONNX_OPERATOR_SET_SCHEMA(
             "If omitted, sizes of all axes upto (including) the last one will be included.",
             AttributeProto::INT,
             OPTIONAL_VALUE)
-        .TypeConstraint("T", OpSchema::all_tensor_types_with_bfloat(), "Input tensor can be of arbitrary type.")
+        .TypeConstraint("T", OpSchema::all_tensor_types_with_bfloat_float8(), "Input tensor can be of arbitrary type.")
         .TypeConstraint("T1", {"tensor(int64)"}, "Constrain output to int64 tensor.")
         .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
           ctx.getOutputType(0)->mutable_tensor_type()->set_elem_type(TensorProto::INT64);
@@ -503,7 +552,7 @@ Takes a tensor as input and outputs a int64 scalar that equals to the total numb
 
 ONNX_OPERATOR_SET_SCHEMA(
     Size,
-    13,
+    19,
     OpSchema()
         .SetDoc(Size_ver13_doc)
         .Input(0, "data", "An input tensor.", "T", OpSchema::Single, true, 1, OpSchema::NonDifferentiable)
@@ -516,7 +565,7 @@ ONNX_OPERATOR_SET_SCHEMA(
             true,
             1,
             OpSchema::NonDifferentiable)
-        .TypeConstraint("T", OpSchema::all_tensor_types_with_bfloat(), "Input tensor can be of arbitrary type.")
+        .TypeConstraint("T", OpSchema::all_tensor_types_with_bfloat_float8(), "Input tensor can be of arbitrary type.")
         .TypeConstraint("T1", {"tensor(int64)"}, "Constrain output to int64 tensor, which should be a scalar though.")
         .TypeAndShapeInferenceFunction([](InferenceContext& ctx) {
           ctx.getOutputType(0)->mutable_tensor_type()->set_elem_type(TensorProto::INT64);
@@ -971,7 +1020,9 @@ ONNX_OPERATOR_SET_SCHEMA(
               fail_shape_inference("Input axes has incorrect length");
             }
           }
-
+          checkAxesRange(axes, input_rank);
+          adjustNegativeAxes(axes, input_rank);
+          checkDuplicateAxes(axes, input_rank);
           std::vector<int64_t> steps;
           if (!stepsInitializer) {
             steps = std::vector<int64_t>(starts.size(), 1);
@@ -993,20 +1044,9 @@ ONNX_OPERATOR_SET_SCHEMA(
             }
           }
 
-          std::unordered_set<int64_t> unique_axes;
           size_t axes_size = axes.size();
           for (size_t axis_index = 0; axis_index < axes_size; ++axis_index) {
             auto axis = axes[axis_index] < 0 ? axes[axis_index] + static_cast<int64_t>(input_rank) : axes[axis_index];
-
-            if (axis >= static_cast<int64_t>(input_rank) || axis < 0) {
-              fail_shape_inference("Input axes has invalid data");
-            }
-
-            if (unique_axes.find(axis) != unique_axes.end()) {
-              fail_shape_inference("'axes' has duplicates");
-            }
-
-            unique_axes.insert(axis);
 
             auto input_dim = ctx.getInputType(0)->tensor_type().shape().dim((int)axis);
 
@@ -1809,9 +1849,8 @@ ONNX_OPERATOR_SET_SCHEMA(
 
           const auto& input_shape = ctx.getInputType(0)->tensor_type().shape();
           const auto input_ndim = input_shape.dim_size();
-          std::transform(axes.begin(), axes.end(), axes.begin(), [&](int64_t axis) -> int64_t {
-            return axis < 0 ? axis + input_ndim : axis;
-          });
+          checkAxesRange(axes, input_ndim);
+          adjustNegativeAxes(axes, input_ndim);
 
           for (int i = 0; i < input_ndim; ++i) {
             if (!input_shape.dim(i).has_dim_value() && axes_not_specified) {
@@ -1899,31 +1938,14 @@ ONNX_OPERATOR_SET_SCHEMA(
             return;
           }
           axes = ParseData<int64_t>(axes_proto);
-
-          // validate 'axes' for duplicate entries
-          std::unordered_set<int64_t> unique_values;
-          for (const auto val : axes) {
-            if (unique_values.find(val) != unique_values.end()) {
-              fail_shape_inference("'axes' attribute must not contain any duplicates");
-            }
-            unique_values.insert(val);
-          }
-
           ctx.getOutputType(0)->mutable_tensor_type()->mutable_shape();
           const auto& input_shape = ctx.getInputType(0)->tensor_type().shape();
           const auto input_ndim = input_shape.dim_size();
           const auto output_ndim = input_ndim + static_cast<int>(axes.size());
-          for (auto& axe : axes) {
-            if (axe < -output_ndim || axe >= output_ndim) {
-              fail_shape_inference("values in 'axes' are beyond the bounds of the computed output shape");
-            }
-            if (axe < 0) {
-              axe += output_ndim;
-            }
-          }
-
-          // sort after correcting negative axes values (if any) in the previous
-          // step
+          checkAxesRange(axes, output_ndim);
+          adjustNegativeAxes(axes, output_ndim);
+          checkDuplicateAxes(axes, output_ndim);
+          // sort after correcting negative axes values (if any)
           std::sort(axes.begin(), axes.end());
 
           int j = 0;
@@ -2503,7 +2525,7 @@ ONNX_OPERATOR_SET_SCHEMA(
 
 ONNX_OPERATOR_SET_SCHEMA(
     Identity,
-    16,
+    19,
     OpSchema()
         .SetDoc("Identity operator")
         .Input(0, "input", "Input tensor", "V", OpSchema::Single, true, 1, OpSchema::Differentiable)
@@ -2511,7 +2533,7 @@ ONNX_OPERATOR_SET_SCHEMA(
         .TypeConstraint(
             "V",
             []() {
-              auto t = OpSchema::all_tensor_types_with_bfloat();
+              auto t = OpSchema::all_tensor_types_with_bfloat_float8();
               auto s = OpSchema::all_tensor_sequence_types();
               auto o = OpSchema::all_optional_types();
               t.insert(t.end(), s.begin(), s.end());
@@ -3637,14 +3659,9 @@ ONNX_OPERATOR_SET_SCHEMA(
           std::vector<int64_t> axes;
           if (axes_attr) {
             axes = RetrieveValues<int64_t>(*axes_attr);
-
-            std::vector<bool> tmp(input_rank, false);
-            for (auto axis : axes) {
-              if (tmp[axis]) {
-                fail_shape_inference("Repeated axis: ", axis);
-              }
-              tmp[axis] = true;
-            }
+            checkAxesRange(axes, input_rank);
+            adjustNegativeAxes(axes, input_rank);
+            checkDuplicateAxes(axes, input_rank);
           } else {
             axes.resize(input_rank);
             std::iota(axes.begin(), axes.end(), 0);

@@ -1064,10 +1064,15 @@ class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, AveragePool);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Cast);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, CastLike);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Constant);
+class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, DeformConv);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, DequantizeLinear);
+class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Identity);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Pad);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, QuantizeLinear);
 class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Resize);
+class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Reshape);
+class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Shape);
+class ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Size);
 
 // Iterate over schema from ai.onnx version 19
 class OpSet_Onnx_ver19 {
@@ -1078,10 +1083,15 @@ class OpSet_Onnx_ver19 {
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Cast)>());
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, CastLike)>());
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Constant)>());
+    fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, DeformConv)>());
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, DequantizeLinear)>());
+    fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Identity)>());
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Pad)>());
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, QuantizeLinear)>());
+    fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Reshape)>());
     fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Resize)>());
+    fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Shape)>());
+    fn(GetOpSchema<ONNX_OPERATOR_SET_SCHEMA_CLASS_NAME(Onnx, 19, Size)>());
   }
 };
 

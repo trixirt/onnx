@@ -1,3 +1,5 @@
+# Copyright (c) ONNX Project Contributors
+#
 # SPDX-License-Identifier: Apache-2.0
 # pylint: disable=C0302,R0912
 import collections.abc
@@ -383,7 +385,7 @@ def float32_to_float8e4m3(  # pylint: disable=too-many-statements
             return 0x80
         if np.isinf(x):
             if saturate:
-                return ret | 126
+                return ret | 0x7F
             return 0x80
         e = (b & 0x7F800000) >> 23  # exponent
         m = b & 0x007FFFFF  # mantissa
@@ -460,7 +462,9 @@ def float32_to_float8e4m3(  # pylint: disable=too-many-statements
                     ret |= m >> 20
                     if (ret & 0x7F) == 0x7F:
                         ret &= 0xFE
-                if m & 0x80000:
+                if (m & 0x80000) and (
+                    (m & 0x100000) or (m & 0x7C000)
+                ):  # round to nearest even
                     if (ret & 0x7F) < 0x7E:
                         # rounding
                         ret += 1
@@ -573,7 +577,9 @@ def float32_to_float8e5m2(  # pylint: disable=too-many-statements
                 ex = e - 112  # 127 - 15
                 ret |= ex << 2
                 ret |= m >> 21
-                if m & 0x100000:
+                if (m & 0x100000) and (
+                    (m & 0xFFFFF) or (m & 0x200000)
+                ):  # round to nearest even
                     if (ret & 0x7F) < 0x7B:
                         # rounding
                         ret += 1

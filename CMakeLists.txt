@@ -368,6 +368,10 @@ list(REMOVE_ITEM __tmp_srcs ${onnx_gtests_src})
 list(APPEND ONNX_SRCS ${__tmp_srcs})
 
 add_library(onnx_proto ${ONNX_PROTO_SRCS} ${ONNX_PROTO_HDRS})
+set_target_properties(onnx_proto PROPERTIES
+    VERSION   ${ONNX_VERSION}
+    SOVERSION ${ONNX_VERSION}
+    )
 add_dependencies(onnx_proto gen_onnx_operators_proto gen_onnx_data_proto)
 target_include_directories(onnx_proto PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
@@ -425,6 +429,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
 else()
   add_library(onnx ${ONNX_SRCS})
 endif()
+
+set_target_properties(onnx PROPERTIES
+    VERSION   ${ONNX_VERSION}
+    SOVERSION ${ONNX_VERSION}
+  )
 
 target_include_directories(onnx PUBLIC
   $<BUILD_INTERFACE:${ONNX_ROOT}>
